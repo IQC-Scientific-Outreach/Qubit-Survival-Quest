@@ -1,0 +1,795 @@
+/* ============================================================
+   Qubit Survival Quest — stylesheet
+   Built on Hadamard's Hoard's dark "quantum lab" theme: same page and
+   panel colors, same IQC red accent for controls, same three UW brand
+   fonts (Barlow Condensed for UI/headings, Verdana for compact data,
+   Georgia for prose), and the same setup-card / pill / switch /
+   primary-button components.
+
+   Color roles (keep these distinct when extending):
+     --quantum*   IQC red: controls you can press, active selections.
+     --state      cyan: the qubit/photon itself (state tiles, the beam).
+     --gem        gold: score and success (streak number, "Successful
+                  Transmission!").
+     --danger     loss ("Qubit Lost!", absorbed tile, broken beam).
+     --meas-* / gate tints: the lab's object colors — dark for
+                  measurements, pale blue for transformations, pale pink
+                  for quarter-wave plates, near-white for identity, amber
+                  for maple syrup.
+
+   The one loud element is the stage: a glowing cyan beam carrying the
+   qubit through each object, with the streak counter above it.
+   Everything else stays quiet so that reads first from across a room.
+   ============================================================ */
+
+:root{
+  /* ---- Dark theme (default) — Hadamard's Hoard's palette ---- */
+  color-scheme: dark;
+  --bg: #0b0e14;
+  --bg-panel: #12161f;
+  --bg-panel-raised: #171c27;
+  --hairline: #262c3a;
+  --ink: #e9ecf3;
+  --ink-dim: #8b93a7;
+
+  --quantum: #96172E;
+  --quantum-deep: #5c0e1d;
+  --quantum-bright: #e28a97;
+  --quantum-bright-rgb: 226,138,151;
+
+  --state: #6fc7e6;
+  --state-rgb: 111,199,230;
+  --gem: #f2c94c;
+  --gem-rgb: 242,201,76;
+  --danger: #e0637a;
+  --danger-rgb: 224,99,122;
+  --qec: #6fe6a0;
+  --qec-rgb: 111,230,160;
+
+  /* The lab's object colors, lifted slightly so the dark measurement
+     squares still separate from the near-black page. */
+  --meas-fill: #454a57;
+  --meas-stroke: #8b93a7;
+  --gate-fill: #cfe9f7;
+  --gate-stroke: #7fb3d0;
+  --gate-ink: #20475c;
+  --gate-u: #2f6fb0;
+  --qwp-fill: #f7d6d1;
+  --qwp-stroke: #cf8a80;
+  --glass-fill: #eef6fb;
+  --object-ink: #201d1a;
+
+  /* Surfaces that differ by theme */
+  --page-glow-a: rgba(150,23,46,0.14);
+  --page-glow-b: rgba(111,199,230,0.09);
+  --state-tile-bg: radial-gradient(circle at 50% 38%, #163a49, #0b1920 75%);
+  --state-tile-shadow: 0 0 22px rgba(111,199,230,0.35), inset 0 0 16px rgba(111,199,230,0.12);
+  --dull-bg: #121720;
+  --dull-border: #3a4254;
+  --ghost-border: #3a4254;
+  --lost-tile-bg: radial-gradient(circle, rgba(224,99,122,0.28), #1d0e12 75%);
+  --lost-card-bg: linear-gradient(160deg, #3b1119, #1a0b0f);
+  --lost-card-hover: #ff9aac;
+  --card-shadow: 0 14px 30px rgba(0,0,0,0.45);
+  --streak-shadow: 0 0 28px rgba(242,201,76,0.45);
+  --btn-ink: #04141c;
+  --on-accent: #fdf1f2;
+
+  --radius: 10px;
+  font-size: 16px;
+}
+
+/* ---- Light theme — the Superposition and Measurement Lab's palette, so
+   the two IQC tools match in light mode. Same color roles as above; the
+   accents are deepened so they keep their contrast on a light page. ---- */
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg: #faf8f3;
+  --bg-panel: #ffffff;
+  --bg-panel-raised: #ffffff;
+  --hairline: #ded6c4;
+  --ink: #201d1a;
+  --ink-dim: #5b564e;
+
+  --quantum: #9c1c33;
+  --quantum-deep: #711526;
+  --quantum-bright: #c2475c;
+  --quantum-bright-rgb: 194,71,92;
+
+  --state: #2f6fb0;
+  --state-rgb: 47,111,176;
+  --gem: #a87406;
+  --gem-rgb: 168,116,6;
+  --danger: #b23b3b;
+  --danger-rgb: 178,59,59;
+  --qec: #1f8a50;
+  --qec-rgb: 31,138,80;
+
+  --meas-fill: #4c4c50;
+  --meas-stroke: #2b2b2e;
+  --glass-fill: #f4f9fc;
+
+  --page-glow-a: rgba(156,28,51,0.05);
+  --page-glow-b: rgba(47,111,176,0.06);
+  --state-tile-bg: radial-gradient(circle at 50% 38%, #ffffff, #e4eef8 80%);
+  --state-tile-shadow: 0 0 16px rgba(47,111,176,0.22);
+  --dull-bg: #f2f1ec;
+  --dull-border: #c7c4bb;
+  --ghost-border: #d3ccbb;
+  --lost-tile-bg: radial-gradient(circle, #fde3e7, #fbf0f1 75%);
+  --lost-card-bg: linear-gradient(160deg, #fbe6e9, #f5d4d9);
+  --lost-card-hover: #8c2230;
+  --card-shadow: 0 10px 24px rgba(60,40,20,0.14);
+  --streak-shadow: 0 2px 14px rgba(168,116,6,0.18);
+  --btn-ink: #ffffff;
+}
+
+/* Each theme shows the logo made for its background: the white wordmark
+   in dark mode, the full-colour one in light mode. Scoped under .logo-link
+   so these beat .setup-logo / .header-logo's own display:block no matter
+   where those rules appear in the file (equal specificity would otherwise
+   let the later rule win and show both logos at once). */
+.logo-link .logo-for-light{ display: none; }
+:root[data-theme="light"] .logo-link .logo-for-dark{ display: none; }
+:root[data-theme="light"] .logo-link .logo-for-light{ display: block; }
+.mk-state{ fill: var(--state); }
+
+*{ box-sizing: border-box; }
+
+html, body{
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  min-height: 100vh;
+}
+body{
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, var(--page-glow-a), transparent 60%),
+    radial-gradient(ellipse 900px 520px at 88% 8%, var(--page-glow-b), transparent 60%);
+  background-attachment: fixed;
+}
+
+.svg-defs{ position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.screen{ display: none; }
+.screen.active{ display: block; }
+
+/* ===================== SETUP ===================== */
+
+#setup-screen.active{
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 32px 16px;
+}
+.setup-card{
+  width: 100%; max-width: 660px;
+  background: var(--bg-panel);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 40px 36px;
+}
+.logo-link{ display: inline-block; line-height: 0; text-decoration: none; flex-shrink: 0; }
+.setup-logo{ display: block; height: 40px; width: auto; max-width: 100%; margin-bottom: 22px; }
+
+.eyebrow{
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--quantum-bright);
+  margin-bottom: 10px;
+}
+h1{
+  font-size: 52px; font-weight: 700; line-height: 1;
+  margin: 0 0 12px 0; letter-spacing: -0.005em;
+}
+.tagline{
+  font-family: Georgia, serif;
+  color: var(--ink-dim);
+  font-size: 15.5px; line-height: 1.55;
+  max-width: 54ch;
+  margin: 0 0 26px 0;
+}
+
+/* The preview reuses the game's stage components at a smaller size. */
+.setup-preview{
+  --tile: 62px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 18px 12px 8px;
+  margin: 0 0 28px 0;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 50% 45%, rgba(var(--state-rgb),0.08), transparent 65%), var(--bg);
+}
+.setup-preview .slot-cap{ display: none; }
+/* With the caption row hidden, each tile sits at the top of its slot and the
+   name below it, so centering the beams on the slot would put them below
+   the tiles' middles. Align everything to the top and drop each beam to
+   exactly half a tile down instead. */
+.setup-preview{ align-items: flex-start; }
+.setup-preview .beam{ margin-top: calc(var(--tile) / 2); transform: translateY(-50%); } /* exact for any beam height */
+.setup-preview .slot{ width: calc(var(--tile) + 30px); }
+.setup-preview .beam{ flex: 1 1 24px; min-width: 18px; max-width: 110px; }
+.setup-preview .slot-name{ font-size: 13px; }
+
+.setup-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px 20px;
+  margin-bottom: 28px;
+}
+.setup-field-wide{ grid-column: 1 / -1; }
+.setup-field label{
+  display: block;
+  font-size: 14px; font-weight: 500;
+  color: var(--ink-dim);
+  margin-bottom: 8px;
+}
+.mode-note{
+  font-family: Georgia, serif;
+  font-size: 13px; line-height: 1.5;
+  color: var(--ink-dim);
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+}
+.mode-note-inline{ margin-top: 10px; }
+
+/* Pill buttons: an exclusive choice (Bra-Ket/Polarization, Real/Complex).
+   The active pill gets the red gradient; app.js keeps aria-pressed in sync. */
+.pill-group{ display: flex; gap: 8px; flex-wrap: wrap; }
+.pill{
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline);
+  background: var(--bg-panel-raised);
+  color: var(--ink-dim);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.pill:hover{ border-color: var(--quantum-deep); color: var(--ink); }
+.pill.active{
+  background: linear-gradient(135deg, var(--quantum-deep), var(--quantum));
+  border-color: var(--quantum-bright);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.toggle-row{ display: flex; align-items: center; gap: 10px; }
+.toggle-off-label, .toggle-on-label{ font-size: 13px; color: var(--ink-dim); }
+/* On/off switch (Sound, Animations, Theme). role="switch" + aria-checked in
+   the markup; .active slides the knob right and fills the track red. */
+.switch{
+  width: 44px; height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--bg-panel-raised);
+  position: relative; cursor: pointer; padding: 0;
+}
+.switch .knob{
+  position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--ink-dim);
+  transition: all .15s ease;
+}
+.switch.active{ background: linear-gradient(135deg, var(--quantum-deep), var(--quantum)); border-color: var(--quantum-bright); }
+.switch.active .knob{ left: 22px; background: var(--on-accent); }
+
+/* The single call to action ("Begin quest"). */
+.primary-btn{
+  width: 100%;
+  padding: 16px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--quantum), var(--quantum-bright));
+  color: var(--btn-ink);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 19px; letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform .1s ease, box-shadow .15s ease;
+}
+.primary-btn:hover{ box-shadow: 0 0 0 3px rgba(var(--quantum-bright-rgb),0.3); }
+.primary-btn:active{ transform: scale(0.99); }
+
+/* Collapsible <details> sections under the Begin button. */
+.rules-disclosure{
+  margin-top: 22px;
+  color: var(--ink-dim);
+  font-size: 14px;
+  font-family: Georgia, serif;
+}
+.rules-disclosure summary{
+  cursor: pointer; color: var(--ink);
+  font-weight: 500; font-size: 16px;
+  margin-bottom: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.rules-disclosure ol{ padding-left: 20px; line-height: 1.65; }
+.rules-disclosure li{ margin-bottom: 6px; }
+.rules-disclosure p{ line-height: 1.65; margin: 0 0 10px 0; }
+.rules-disclosure a{ color: var(--quantum-bright); }
+.rules-disclosure a:hover{ color: var(--quantum); }
+.rules-disclosure + .rules-disclosure{ margin-top: 14px; }
+
+.twins-scroll{ overflow-x: auto; }
+/* "Object twins" table: every object in both styles, built from CARDS. */
+.twins-table{ --tile: 34px; width: 100%; border-collapse: collapse; font-family: Verdana, Geneva, sans-serif; font-size: 12.5px; }
+.twins-table th{ text-align: left; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); padding: 6px 8px; border-bottom: 1px solid var(--hairline); }
+.twins-table td{ padding: 6px 8px; border-bottom: 1px solid var(--hairline); color: var(--ink); vertical-align: middle; }
+.twin-cell{ display: flex; align-items: center; gap: 10px; }
+.twin-note{ color: var(--ink-dim); font-size: 11.5px; white-space: nowrap; }
+
+/* ===================== GAME HEADER ===================== */
+
+/* Header row: logo, title, then controls pushed right (style toggle, theme
+   switch, mute, main menu). Wraps onto two lines on narrow screens. */
+.game-header{
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--hairline);
+  flex-wrap: wrap;
+}
+.header-logo{ display: block; height: 22px; width: auto; max-width: 170px; }
+.game-title{ font-weight: 700; font-size: 21px; }
+.header-controls{ margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pill-group-compact .pill{ padding: 7px 12px; font-size: 12.5px; }
+.theme-row{ gap: 6px; }
+.theme-icon{ font-size: 15px; color: var(--ink-dim); line-height: 1; }
+/* Square icon button (mute) and outlined text button (main menu). */
+.icon-btn{
+  background: none; border: 1px solid var(--hairline);
+  color: var(--ink-dim); width: 34px; height: 34px;
+  border-radius: 8px; cursor: pointer;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+.icon-btn:hover{ color: var(--ink); border-color: var(--quantum-deep); }
+.ghost-btn{
+  background: none; border: 1px solid var(--hairline);
+  color: var(--ink-dim); padding: 7px 14px;
+  border-radius: 8px; cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 14px;
+}
+.ghost-btn:hover{ color: var(--ink); border-color: var(--quantum-deep); }
+
+/* ===================== GAME LAYOUT ===================== */
+
+/* Game screen column: scoreboard + message, stage, hand. */
+.game-main{
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 22px 24px 40px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+/* Scoreboard beside the message banner; stacked on narrow screens. */
+.top-row{
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 18px;
+}
+
+/* ---- Scoreboard ---- */
+.scoreboard{
+  background: var(--bg-panel);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 16px 22px;
+  display: flex; align-items: center; gap: 26px;
+}
+.stat-label{ display: block; font-family: Verdana, Geneva, sans-serif; font-size: 12px; color: var(--ink-dim); }
+/* The streak: the loudest element on the page, gold with a glow. */
+.streak-num{
+  font-weight: 700;
+  font-size: clamp(72px, 9vw, 112px);
+  line-height: 0.92;
+  color: var(--gem);
+  text-shadow: var(--streak-shadow);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.1ch;
+}
+.streak-num.pop{ animation: pop .5s cubic-bezier(.3,1.6,.5,1); }
+.side-stats{ display: flex; flex-direction: column; gap: 8px; }
+.side-stat{ display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.stat-val{ font-weight: 700; font-size: 34px; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.milestones{ display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; }
+/* "Par beaten!" / "New best!" chips; .fresh pops the one just earned. */
+.milestone{
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 11.5px; font-weight: 700;
+  padding: 4px 9px; border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.milestone-par{ color: var(--qec); border-color: var(--qec); background: rgba(var(--qec-rgb),0.14); }
+.milestone-best{ color: var(--gem); border-color: var(--gem); background: rgba(var(--gem-rgb),0.14); }
+.milestone.fresh{ animation: pop .55s cubic-bezier(.3,1.6,.5,1); }
+
+/* ---- Message banner ---- */
+.message{
+  --msg-color: var(--hairline);
+  background: var(--bg-panel);
+  border: 1px solid var(--hairline);
+  border-left: 6px solid var(--msg-color);
+  border-radius: 16px;
+  padding: 16px 24px;
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  min-height: 124px;
+}
+.message.success{ --msg-color: var(--gem); background: linear-gradient(90deg, rgba(var(--gem-rgb),0.10), var(--bg-panel) 70%); }
+.message.rotated{ --msg-color: var(--state); background: linear-gradient(90deg, rgba(var(--state-rgb),0.10), var(--bg-panel) 70%); }
+.message.unchanged{ --msg-color: var(--ink-dim); }
+.message.lost{ --msg-color: var(--danger); background: linear-gradient(90deg, rgba(var(--danger-rgb),0.14), var(--bg-panel) 70%); }
+.msg-title{ font-weight: 700; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; color: var(--msg-color); }
+.message.unchanged .msg-title{ color: var(--ink); }
+.msg-sub{ font-family: Georgia, serif; font-size: 15px; color: var(--ink-dim); line-height: 1.5; }
+.msg-neutral{ font-family: Georgia, serif; font-size: 18px; line-height: 1.5; color: var(--ink); max-width: 46ch; }
+.message.msg-in > *{ animation: msgIn .35s ease; }
+
+/* ===================== STAGE ===================== */
+
+.stage-panel{
+  /* Tile size is capped so the four slots + three beams always fit the
+     stage window: available width is ~100vw minus page/panel padding, and
+     4 * (tile + 46px) + 3 * 5.5vw must fit inside it. The 20.8vw - 64px
+     term only takes over in the narrow band just above the phone
+     breakpoint, where the plain 10.5vw rule would overflow by ~30px. */
+  --tile: clamp(48px, min(10.5vw, 20.8vw - 64px), 120px);
+  --slot: calc(var(--tile) + 46px);
+  --beam: clamp(14px, 5.5vw, 92px);
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(var(--state-rgb),0.09), transparent 70%),
+    var(--bg-panel);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 22px 22px 14px;
+}
+.stage-panel.is-lost{
+  background:
+    radial-gradient(ellipse 70% 60% at 60% 40%, rgba(var(--danger-rgb),0.10), transparent 70%),
+    var(--bg-panel);
+}
+.stage-panel.lost-fx .stage{ animation: shake .45s ease; }
+
+/* The stage is a window exactly four slots and three beams wide; the
+   track inside it slides left during the play animation, and anything
+   outside the window is clipped. */
+.stage{
+  position: relative;
+  width: calc(4 * var(--slot) + 3 * var(--beam));
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: 6px 0;
+}
+.track{
+  position: relative;          /* the token is positioned in track coordinates */
+  display: flex; align-items: center;
+  width: max-content;
+}
+.track .tile-object{ z-index: 2; } /* objects pass OVER the traveling qubit */
+.token{
+  position: absolute; z-index: 1;
+  width: var(--tile);
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.slot.hold .tile{ visibility: hidden; }
+
+/* A slot is caption / tile / name. Caption and name get the SAME fixed
+   height so the tile sits exactly at the slot's vertical center — that's
+   what lets the flex-centered beams line up with the tiles. */
+.slot{
+  width: var(--slot, calc(var(--tile) + 46px));
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+}
+.slot-cap, .slot-name{
+  height: 3.1em;
+  width: 100%;
+  text-align: center; line-height: 1.25;
+}
+.slot-cap{
+  display: flex; justify-content: center;
+  align-items: flex-end; padding-bottom: 8px;
+  font-family: Verdana, Geneva, sans-serif; font-size: 12px; color: var(--ink-dim);
+}
+.slot-name{
+  display: block; padding-top: 10px;
+  font-size: 15px; font-weight: 500; color: var(--ink);
+}
+.slot.is-ghost .tile{ opacity: 0.35; }
+
+/* ---- The beam ---- */
+.beam{
+  flex: 0 0 var(--beam, 40px);
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hairline);
+  position: relative;
+  overflow: hidden;
+}
+.beam.lit{
+  background: linear-gradient(90deg, rgba(var(--state-rgb),0.45), var(--state), rgba(var(--state-rgb),0.45));
+  box-shadow: 0 0 14px rgba(var(--state-rgb),0.65);
+}
+/* The page's one ambient motion: a highlight drifting along the lit beam,
+   so the qubit reads as "traveling" even between plays. */
+.beam.lit::after{
+  content: "";
+  position: absolute; top: 0; bottom: 0; left: -40%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+  animation: beamDrift 2.6s linear infinite;
+}
+.beam.lit.firing::after{ animation: beamFire .2s linear 1 forwards; }
+.beam.broken{
+  background: linear-gradient(90deg, var(--state), var(--danger) 45%, rgba(var(--danger-rgb),0) 100%);
+  box-shadow: 0 0 10px rgba(var(--danger-rgb),0.45);
+}
+.beam.to-next{ background: repeating-linear-gradient(90deg, var(--ghost-border) 0 8px, transparent 8px 15px); }
+.beam.to-next.off{ opacity: 0; }
+
+/* ===================== TILES ===================== */
+
+/* Every state/object picture is a .tile. Its size comes from --tile on
+   whatever contains it; everything inside scales via cqi units. */
+.tile{
+  width: var(--tile);
+  aspect-ratio: 1;
+  position: relative;
+  flex-shrink: 0;
+  container-type: inline-size;
+}
+.face{ position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.face-svg{ width: 100%; height: 100%; overflow: visible; display: block; }
+
+/* State tiles: the qubit itself. */
+.tile-state{
+  border-radius: 22%;
+  border: 2px solid var(--state);
+  background: var(--state-tile-bg);
+  box-shadow: var(--state-tile-shadow);
+}
+.tile-state{ transition: border-color .2s ease, background .2s ease, box-shadow .2s ease; }
+.tile-state .face{ transition: opacity .2s ease, filter .2s ease; }
+.tile-state.dull{
+  border-color: var(--dull-border);
+  background: var(--dull-bg);
+  box-shadow: none;
+}
+.tile-state.dull .face{ opacity: 0.45; filter: grayscale(1); }
+.face-ket{ color: var(--state); font-size: 30cqi; }
+
+/* Bra-Ket object faces: an inset rounded square. Unlike the Polarization
+   SVG squares, these never rotate, so they don't need the SVG's extra
+   rotation margin and sit a little larger in their tile. */
+.face-bk{
+  inset: 7%;
+  border-radius: 19.6%;
+  border: 1.5px solid;
+}
+.face-meas{ background: var(--meas-fill); border-color: var(--meas-stroke); color: #fff; font-size: 19cqi; }
+.face-gate{ background: var(--gate-fill); border-color: var(--gate-stroke); color: var(--gate-ink); }
+.face-glass{ background: var(--glass-fill); border-color: var(--gate-stroke); color: var(--gate-ink); }
+.gate-letter{
+  font-family: "Times New Roman", Times, serif;
+  font-style: italic; font-weight: 700;
+  font-size: 46cqi; line-height: 1;
+  padding-right: 0.06em; /* italic overhang */
+}
+.gate-u{ color: var(--gate-u); }
+
+/* Kets: CSS bar + SVG angle bracket, sized together so the bar and the
+   bracket are always exactly the same height. */
+.ket{
+  display: inline-flex; align-items: center;
+  font-family: "Times New Roman", Times, serif;
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.k-bar{ display: inline-block; width: 0; height: 1.2em; border-left: 0.075em solid currentColor; margin: 0 0.07em; }
+.k-sym{ padding: 0 0.04em; }
+.k-sym sub{ font-size: 0.62em; font-style: italic; vertical-align: -0.28em; line-height: 0; }
+.k-angle{ width: 0.32em; height: 1.2em; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: round; }
+
+/* Bra-Ket captions: a state written out in the |0>,|1> basis as a
+   stacked fraction over a square root. */
+.frac{
+  display: inline-flex; flex-direction: column; align-items: center;
+  vertical-align: middle;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 0.95em; line-height: 1.05;
+}
+.frac-num{ padding: 0 0.2em 0.14em; border-bottom: 1px solid currentColor; white-space: nowrap; }
+.frac-den{ padding-top: 0.1em; }
+.sqrt{ white-space: nowrap; }
+.sqrt-arg{ border-top: 1px solid currentColor; padding: 0 0.08em 0 0.04em; }
+.op{ font-size: 1.2em; line-height: 1; padding: 0 0.22em; }
+.imag{ font-style: italic; margin-right: 0.05em; }
+.slot-name .ket{ font-size: 1.05em; }
+
+/* Polarization SVG objects. */
+.sq{ stroke-width: 1.5; }
+.sq-meas{ fill: var(--meas-fill); stroke: var(--meas-stroke); }
+.sq-hwp{ fill: var(--gate-fill); stroke: var(--gate-stroke); }
+.sq-qwp{ fill: var(--qwp-fill); stroke: var(--qwp-stroke); }
+.sq-glass{ fill: var(--glass-fill); stroke: var(--gate-stroke); }
+.sq-syrup{ fill: none; stroke: #8f4a12; }
+.syrup-drip{ fill: #8f4a12; }
+.syrup-text{ font-size: 11px; }
+.syrup-shine{ stroke: rgba(255,240,200,0.55); stroke-width: 3; stroke-linecap: round; }
+.glass-glare{ stroke: #ffffff; stroke-width: 3; stroke-linecap: round; }
+.pol-axis{ stroke: #ffffff; stroke-width: 3; stroke-linecap: round; }
+.wp-slow{ stroke: var(--object-ink); stroke-width: 1.5; }
+.wp-fast{ stroke: var(--object-ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.circ-icon{ fill: none; stroke: #ffffff; stroke-width: 3; }
+.circ-arc{ fill: none; stroke: #ffffff; stroke-width: 1.3; }
+.rot-arc{ fill: none; stroke: var(--object-ink); stroke-width: 2.2; }
+.rot-text{ font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; fill: var(--object-ink); text-anchor: middle; dominant-baseline: central; }
+.state-axis{ stroke: var(--state); stroke-width: 3; stroke-linecap: round; }
+.state-circ{ fill: none; stroke: var(--state); stroke-width: 3; }
+.state-arc{ fill: none; stroke: var(--state); stroke-width: 1.3; }
+
+/* Stage-only tiles. */
+.tile-ghost{ border-radius: 22%; border: 2px dashed var(--ghost-border); }
+.tile-next{
+  border-radius: 22%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+/* Note: cqi units resolve against the nearest ANCESTOR container, so the
+   glyph sizes are set on the inner <span>, never on the .tile itself. */
+.tile-next span{ font-size: 40cqi; line-height: 1; }
+.tile-lost span{ font-size: 46cqi; line-height: 1; }
+.tile-next{ border: 2px dashed var(--ink-dim); color: var(--ink-dim); }
+.tile-lost{
+  border-radius: 22%;
+  border: 2px solid var(--danger);
+  background: var(--lost-tile-bg);
+  box-shadow: 0 0 24px rgba(var(--danger-rgb),0.45);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--danger); font-weight: 700;
+}
+.tile.arriving{ animation: arrive .22s cubic-bezier(.3,1.3,.5,1); }
+.tile.processing{ animation: processPulse .2s ease; }
+/* Absorbed: the measurement flashes red (the lab's projector flash). */
+.tile.flash-red{ filter: drop-shadow(0 0 14px rgba(255,43,74,0.85)); }
+.tile.flash-red .sq-meas{ animation: flashFill .32s ease; }
+.tile.flash-red .face-meas{ animation: flashBg .32s ease; }
+.tile.pop-in{ animation: popIn .45s cubic-bezier(.3,1.6,.5,1); }
+.tile.flip-in{ animation: flipIn .45s ease; }
+
+/* ---- History strip ---- */
+/* Row of mini tiles under the stage: every object survived this run. */
+.history{
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+}
+.history-label{ font-family: Verdana, Geneva, sans-serif; font-size: 12px; color: var(--ink-dim); flex-shrink: 0; }
+.history-strip{
+  --tile: 30px;
+  display: flex; gap: 7px;
+  overflow-x: auto;
+  padding: 6px 4px;
+  min-height: 44px;
+}
+.history-strip .tile-state{ border-width: 1.5px; box-shadow: 0 0 8px rgba(var(--state-rgb),0.3); }
+.history-strip::-webkit-scrollbar{ height: 6px; }
+.history-strip::-webkit-scrollbar-thumb{ background: var(--hairline); border-radius: 3px; }
+
+/* ===================== HAND ===================== */
+
+.hand-panel{ display: flex; flex-direction: column; gap: 12px; }
+.hand-label{ font-family: Verdana, Geneva, sans-serif; font-size: 13px; color: var(--ink-dim); text-align: center; }
+/* The hand: three card buttons in a row. Each holds a tile (sized by
+   --tile here) and the object's name; hover lifts the card. */
+.hand{
+  --tile: clamp(72px, 11vw, 112px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%; max-width: 780px;
+  margin: 0 auto;
+}
+.hand-card{
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 18px;
+  padding: 24px 12px 16px;
+  min-height: 210px;
+  background: var(--bg-panel-raised);
+  border: 1.5px solid var(--hairline);
+  border-radius: 16px;
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+.hand-card:hover:not(:disabled){
+  transform: translateY(-6px);
+  border-color: var(--quantum-bright);
+  box-shadow: var(--card-shadow), 0 0 0 3px rgba(var(--quantum-bright-rgb),0.18);
+}
+.hand-card:disabled{ cursor: default; }
+.hand-card:disabled:not(.played){ opacity: 0.55; }
+/* Small 1/2/3 badge: the keyboard shortcut for that card. */
+.card-key{
+  position: absolute; top: 9px; left: 10px;
+  font-family: Verdana, Geneva, sans-serif; font-size: 11px;
+  color: var(--ink-dim);
+  border: 1px solid var(--hairline); border-radius: 5px;
+  padding: 1px 6px;
+}
+.card-name{ font-size: 18px; font-weight: 600; line-height: 1.2; text-align: center; }
+.hand-card.played{ animation: cardPlay .32s ease forwards; }
+.hand-card.dealt{ animation: cardDeal .4s cubic-bezier(.3,1.3,.5,1); }
+
+.hand-card.lost-card{
+  justify-content: center;
+  background: var(--lost-card-bg);
+  border-color: var(--danger);
+}
+.hand-card.lost-card:hover{ border-color: var(--lost-card-hover); box-shadow: var(--card-shadow), 0 0 0 3px rgba(var(--danger-rgb),0.25); }
+.lost-text{ font-size: 26px; font-weight: 700; color: var(--danger); }
+
+/* ===================== MOTION ===================== */
+
+@keyframes pop{ 0%{ transform: scale(1); } 40%{ transform: scale(1.22); } 100%{ transform: scale(1); } }
+@keyframes popIn{ 0%{ transform: scale(0.6); opacity: 0; } 100%{ transform: scale(1); opacity: 1; } }
+@keyframes arrive{ 0%{ transform: translateY(40px) scale(0.8); opacity: 0; } 100%{ transform: none; opacity: 1; } }
+@keyframes flipIn{ 0%{ transform: rotateY(90deg); } 100%{ transform: rotateY(0); } }
+@keyframes msgIn{ 0%{ transform: translateY(6px); opacity: 0; } 100%{ transform: none; opacity: 1; } }
+@keyframes shake{
+  0%, 100%{ transform: translateX(0); }
+  20%{ transform: translateX(-9px); } 40%{ transform: translateX(8px); }
+  60%{ transform: translateX(-6px); } 80%{ transform: translateX(3px); }
+}
+@keyframes processPulse{ 0%{ transform: scale(1); } 45%{ transform: scale(1.1); } 100%{ transform: scale(1); } }
+@keyframes flashFill{ 0%, 100%{ fill: var(--meas-fill); } 35%, 65%{ fill: #ff2b4a; stroke: #ffb3c0; } }
+@keyframes flashBg{ 0%, 100%{ background: var(--meas-fill); } 35%, 65%{ background: #ff2b4a; border-color: #ffb3c0; } }
+@keyframes beamDrift{ 0%{ left: -40%; } 100%{ left: 100%; } }
+@keyframes beamFire{ 0%{ left: -40%; opacity: 1; } 100%{ left: 100%; opacity: 1; } }
+@keyframes cardPlay{ 0%{ transform: none; } 100%{ transform: translateY(-26px) scale(0.94); opacity: 0.25; } }
+@keyframes cardDeal{ 0%{ transform: translateY(24px) scale(0.92); opacity: 0; } 100%{ transform: none; opacity: 1; } }
+
+/* ===================== RESPONSIVE ===================== */
+
+@media (max-width: 860px){
+  .top-row{ grid-template-columns: 1fr; }
+  .setup-grid{ grid-template-columns: 1fr; }
+  h1{ font-size: 40px; }
+  .game-header{ padding: 12px 16px; }
+  .header-controls{ margin-left: 0; width: 100%; }
+  .game-main{ padding: 16px 12px 32px; }
+}
+@media (max-width: 560px){
+  .setup-card{ padding: 28px 20px; }
+  .setup-preview{ --tile: 46px; }
+  .setup-preview .slot{ width: calc(var(--tile) + 22px); }
+  .setup-preview .slot-name{ font-size: 11.5px; }
+  /* Phones: 48px tiles, shrinking further on very narrow screens so that
+     4 * (tile + 20px) + 3 * 10px fits the ~100vw - 38px of room. */
+  .stage-panel{ --tile: min(48px, calc((100vw - 68px) / 4 - 20px)); --slot: calc(var(--tile) + 20px); --beam: 10px; padding: 14px 6px 10px; }
+  .slot-cap, .slot-name{ height: 4.4em; }
+  .slot-cap{ font-size: 10.5px; }
+  .slot-name{ font-size: 12px; padding-top: 8px; }
+  .beam{ height: 5px; }
+  .hand{ gap: 10px; }
+  .hand-card{ min-height: 170px; padding: 22px 6px 12px; }
+  .card-name{ font-size: 15px; }
+  .scoreboard{ gap: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ transition: none !important; animation: none !important; }
+}
+
+button:focus-visible{
+  outline: 2px solid var(--quantum-bright);
+  outline-offset: 2px;
+}

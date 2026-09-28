@@ -1,0 +1,237 @@
+<!--
+  Qubit Survival Quest — page structure
+    <head>   CSP + referrer policy (security), fonts, style.css
+    svg.svg-defs    shared arrowheads / gradient / clip shape used by
+                    every icon (referenced as url(#qsq-...))
+    #setup-screen   welcome card: live preview, settings, Begin, disclosures
+    #game-screen    header controls, scoreboard + message, stage, hand
+  All behaviour lives in audio.js (sound) and app.js (everything else);
+  there is deliberately no inline script, which the CSP enforces. Most
+  game-screen content is empty here and drawn by app.js.
+-->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<!-- Security: Content-Security-Policy. GitHub Pages can't set HTTP headers,
+     so the policy is delivered here and must come before any resource.
+     The game only needs its own two scripts, its stylesheet and logos, and
+     Google Fonts; everything else (inline scripts, eval, network requests,
+     plugins, frames, forms, <base> rewriting) is refused. `file:` is listed
+     next to 'self' so the page still works when opened by double-click:
+     some browsers don't treat other local files as 'self'. It's harmless on
+     the web, where browsers never let an https page load file: resources.
+     Note: element.style changes made from app.js are allowed under this
+     policy (only style *attributes* in markup would need 'unsafe-inline',
+     and the game generates none). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'self' file: https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' file:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- Don't send this page's URL to third parties (Google Fonts, outbound links). -->
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qubit Survival Quest</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Arrowhead library shared by every SVG icon on the page (referenced as
+     marker-end="url(#qsq-arrow-...)"). Kept in its own always-rendered,
+     zero-size SVG — never display:none, which breaks markers in some
+     browsers. -->
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="qsq-arrow-white" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#ffffff"/>
+    </marker>
+    <marker id="qsq-arrow-state" markerWidth="5.5" markerHeight="5.5" refX="2.7" refY="2.7" orient="auto-start-reverse">
+      <path class="mk-state" d="M0,0 L5.5,2.7 L0,5.5 Z"/>
+    </marker>
+    <marker id="qsq-arrow-state-small" markerWidth="4.5" markerHeight="4.5" refX="2.2" refY="2.2" orient="auto">
+      <path class="mk-state" d="M0,0 L4.5,2.2 L0,4.5 Z"/>
+    </marker>
+    <marker id="qsq-arrow-ink" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">
+      <path d="M0,0 L4,2 L0,4 Z" fill="#201d1a"/>
+    </marker>
+    <!-- Maple syrup tile: amber fill, and the object square's shape for
+         clipping the drips to its rounded corners. -->
+    <linearGradient id="qsq-syrup-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0b04a"/>
+      <stop offset="1" stop-color="#c46a1c"/>
+    </linearGradient>
+    <clipPath id="qsq-square-clip">
+      <rect x="-28" y="-28" width="56" height="56" rx="11"/>
+    </clipPath>
+  </defs>
+</svg>
+
+<div id="app">
+
+  <!-- ===================== SETUP SCREEN ===================== -->
+  <section id="setup-screen" class="screen active">
+    <div class="setup-card">
+      <a class="logo-link" href="https://uwaterloo.ca/institute-for-quantum-computing/outreach" target="_blank" rel="noopener noreferrer">
+        <img class="setup-logo logo-for-dark" src="UW_IQC_logo_reverse.png" alt="University of Waterloo — Institute for Quantum Computing">
+        <img class="setup-logo logo-for-light" src="UW_IQC_logo.png" alt="University of Waterloo — Institute for Quantum Computing">
+      </a>
+      <div class="eyebrow">Institute for Quantum Computing · Outreach</div>
+      <h1>Qubit Survival Quest</h1>
+      <p class="tagline">Keep a single qubit alive as long as you can. Every object you put in its path either measures it, and might destroy it, or transforms it into a new state.</p>
+
+      <!-- Live preview: redrawn in whichever qubit style is selected, so
+           switching styles here visibly swaps every piece for its twin. -->
+      <div class="setup-preview" id="setup-preview" role="group" aria-label="Example sequence"></div>
+
+      <!-- Settings. Qubit style can also be changed mid-game (header); Numbers
+           is locked once the quest starts; Sound/Theme are also in the header. -->
+      <div class="setup-grid">
+        <div class="setup-field setup-field-wide">
+          <label id="setup-domain-label">Qubit style</label>
+          <div class="pill-group" id="setup-domain" role="group" aria-labelledby="setup-domain-label">
+            <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
+            <button type="button" class="pill" data-value="polarization">Polarization</button>
+          </div>
+          <p class="mode-note mode-note-inline"><span id="domain-note"></span> You can switch styles mid-game: every object has an exact twin.</p>
+        </div>
+
+        <div class="setup-field setup-field-wide">
+          <label id="setup-numbers-label">Numbers</label>
+          <div class="pill-group" id="setup-numbers" role="group" aria-labelledby="setup-numbers-label">
+            <button type="button" class="pill" data-value="real">Real-Only</button>
+            <button type="button" class="pill active" data-value="complex">Complex</button>
+          </div>
+          <p class="mode-note mode-note-inline" id="numbers-note"></p>
+        </div>
+
+        <div class="setup-field">
+          <label>Sound</label>
+          <div class="toggle-row">
+            <span class="toggle-off-label">Off</span>
+            <button type="button" class="switch active" id="sound-toggle" role="switch" aria-checked="true" aria-label="Sound"><span class="knob"></span></button>
+            <span class="toggle-on-label">On</span>
+          </div>
+        </div>
+
+        <div class="setup-field">
+          <label>Animations</label>
+          <div class="toggle-row">
+            <span class="toggle-off-label">Off</span>
+            <button type="button" class="switch active" id="anim-toggle" role="switch" aria-checked="true" aria-label="Animations"><span class="knob"></span></button>
+            <span class="toggle-on-label">On</span>
+          </div>
+        </div>
+
+        <div class="setup-field">
+          <label>Theme</label>
+          <div class="toggle-row">
+            <span class="toggle-off-label">Light</span>
+            <button type="button" class="switch active" id="theme-toggle" role="switch" aria-checked="true" aria-label="Dark theme"><span class="knob"></span></button>
+            <span class="toggle-on-label">Dark</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="start-btn" class="primary-btn">Begin quest</button>
+
+      <details class="rules-disclosure">
+        <summary>Your mission</summary>
+        <p>A single qubit has just been prepared in the state |0⟩. In Polarization style, that's a horizontally polarized photon. Each turn, you place one object from your hand in its path.</p>
+        <p>Some objects measure the qubit and might destroy it. Others transform it into a new state. How long can you keep it alive?</p>
+      </details>
+
+      <details class="rules-disclosure">
+        <summary>How to play</summary>
+        <ol>
+          <li>Pick one of the three objects in your hand. Click it, or press <strong>1</strong>, <strong>2</strong> or <strong>3</strong>.</li>
+          <li><strong>Measurements</strong> (projectors, polarizers) always let the qubit through if it already matches them, never if it's orthogonal, and half the time otherwise. A qubit that gets through ends up in the measurement's own state.</li>
+          <li><strong>Gates</strong> (wave-plates, maple syrup, clear glass) always let the qubit through, but can change its state.</li>
+          <li>Each object the qubit survives adds one to your streak. Par is the average streak for a careful player who always takes a guaranteed-safe object when they have one.</li>
+          <li>Switch between Bra-Ket and Polarization at any point. Your run carries on exactly as it was, just drawn differently.</li>
+        </ol>
+      </details>
+
+      <details class="rules-disclosure">
+        <summary>Object twins</summary>
+        <p>Each Bra-Ket object and its Polarization twin do exactly the same thing to the qubit.</p>
+        <div class="twins-scroll"><table class="twins-table" id="twins-table"></table></div>
+      </details>
+
+      <details class="rules-disclosure">
+        <summary>Credits</summary>
+        <p>Developed by the IQC Scientific Outreach team in 2026 with the assistance of artificial intelligence, as a companion to the <em>Superposition and Measurement Lab</em> and the lesson plans on IQC's <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach/quantum-educators/teacher-resources" target="_blank" rel="noopener noreferrer">teacher resources page</a>.</p>
+        <p>Contact <a href="mailto:iqc-outreach@uwaterloo.ca">iqc-outreach@uwaterloo.ca</a> with any questions.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <section id="game-screen" class="screen">
+
+    <header class="game-header">
+      <a class="logo-link" href="https://uwaterloo.ca/institute-for-quantum-computing/outreach" target="_blank" rel="noopener noreferrer">
+        <img class="header-logo logo-for-dark" src="UW_IQC_logo_reverse.png" alt="University of Waterloo — Institute for Quantum Computing">
+        <img class="header-logo logo-for-light" src="UW_IQC_logo.png" alt="University of Waterloo — Institute for Quantum Computing">
+      </a>
+      <div class="game-title">Qubit Survival Quest</div>
+      <div class="header-controls">
+        <div class="pill-group pill-group-compact" id="domain-toggle" role="group" aria-label="Qubit style">
+          <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
+          <button type="button" class="pill" data-value="polarization">Polarization</button>
+        </div>
+        <div class="toggle-row theme-row" title="Light / dark theme">
+          <span class="theme-icon" aria-hidden="true">☀</span>
+          <button type="button" class="switch active" id="theme-toggle-header" role="switch" aria-checked="true" aria-label="Dark theme"><span class="knob"></span></button>
+          <span class="theme-icon" aria-hidden="true">☾</span>
+        </div>
+        <button id="mute-btn" class="icon-btn" aria-label="Mute sound" title="Mute sound">🔊</button>
+        <button id="menu-btn" class="ghost-btn">Main menu</button>
+      </div>
+    </header>
+
+    <main class="game-main">
+
+      <!-- Streak / par / best, and the message banner (aria-live, so screen
+           readers announce each outcome). -->
+      <div class="top-row">
+        <section class="scoreboard" aria-label="Score">
+          <div class="streak-block">
+            <div class="stat-label">Current streak</div>
+            <div class="streak-num" id="streak-num" aria-live="polite">0</div>
+          </div>
+          <div class="side-stats">
+            <div class="side-stat"><span class="stat-label">Par</span><span class="stat-val" id="par-num">5</span></div>
+            <div class="side-stat"><span class="stat-label">Best streak</span><span class="stat-val" id="best-num">0</span></div>
+            <div class="milestones" id="milestones"></div>
+          </div>
+        </section>
+
+        <section class="message neutral" id="message" aria-live="polite"></section>
+      </div>
+
+      <!-- The stage: a fixed-width window over a sliding track of slots
+           (prior state -> object -> current state -> next object), joined
+           by the beam. See renderStage() and animatePlay() in app.js. -->
+      <section class="stage-panel" id="stage-panel">
+        <div class="stage" id="stage"></div>
+        <div class="history">
+          <span class="history-label">This run</span>
+          <div class="history-strip" id="history-strip"></div>
+        </div>
+      </section>
+
+      <!-- The hand: three card buttons, drawn by renderHand(). Keys 1-3 also play. -->
+      <section class="hand-panel">
+        <div class="hand-label">Hand: Select the next object to play</div>
+        <div class="hand" id="hand"></div>
+      </section>
+
+    </main>
+  </section>
+
+</div>
+
+<!-- audio.js first: app.js uses its global SFX. -->
+<script src="audio.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
