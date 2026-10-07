@@ -146,10 +146,10 @@ const CARDS = {
   PM:   { cat: 'projector', apply: v => project(v, vecLinear(-45)),   bk: { sym: '-' },  pol: { type: 'polarizer', angle: -45, name: '\u221245\u00b0 Polarizer' } },
   PR:   { cat: 'projector', apply: v => project(v, vecCircular('R')), bk: { sym: '-i' }, pol: { type: 'polarizer', circ: 'R', name: 'Right-Circular Polarizer' }, complexOnly: true },
   PL:   { cat: 'projector', apply: v => project(v, vecCircular('L')), bk: { sym: '+i' }, pol: { type: 'polarizer', circ: 'L', name: 'Left-Circular Polarizer' },  complexOnly: true },
-  GZ:   { cat: 'unitary', apply: v => applyHWP(v, 0),    bk: { gate: 'Z',   name: 'Pauli-Z Gate' },  pol: { type: 'hwp', angle: 0,    name: 'Phase / Z Half Wave-Plate' } },
-  GX:   { cat: 'unitary', apply: v => applyHWP(v, 45),   bk: { gate: 'X',   name: 'Pauli-X Gate' },  pol: { type: 'hwp', angle: 45,   name: 'Not / X Half Wave-Plate' } },
-  GY:   { cat: 'unitary', apply: applyY,                 bk: { gate: 'Y',   name: 'Pauli-Y Gate' },  pol: { type: 'syrup',            name: 'Maple Syrup' } },
-  GH:   { cat: 'unitary', apply: v => applyHWP(v, 22.5), bk: { gate: 'H',   name: 'Hadamard Gate' }, pol: { type: 'hwp', angle: 22.5, name: 'Hadamard Half Wave-Plate' } },
+  GZ:   { cat: 'unitary', apply: v => applyHWP(v, 0),    bk: { gate: 'Z',   name: 'Pauli-Z Gate' },  pol: { type: 'hwp', angle: 0,    name: 'Half Wave-Plate (0\u00b0)' } },
+  GX:   { cat: 'unitary', apply: v => applyHWP(v, 45),   bk: { gate: 'X',   name: 'Pauli-X Gate' },  pol: { type: 'hwp', angle: 45,   name: 'Half Wave-Plate (45\u00b0)' } },
+  GY:   { cat: 'unitary', apply: applyY,                 bk: { gate: 'Y',   name: 'Pauli-Y Gate' },  pol: { type: 'syrup',            name: 'Maple Syrup (optically active)' } },
+  GH:   { cat: 'unitary', apply: v => applyHWP(v, 22.5), bk: { gate: 'H',   name: 'Hadamard Gate' }, pol: { type: 'hwp', angle: 22.5, name: 'Half Wave-Plate (22.5\u00b0)' } },
   GUZY: { cat: 'unitary', apply: v => applyQWP(v, 45),   bk: { gate: 'UZY', name: 'Basis Change (Z\u2194Y)' }, pol: { type: 'qwp', angle: 45, name: 'Quarter Wave-Plate (45\u00b0)' }, complexOnly: true },
   GUXY: { cat: 'unitary', apply: v => applyQWP(v, 0),    bk: { gate: 'UXY', name: 'Basis Change (X\u2194Y)' }, pol: { type: 'qwp', angle: 0,  name: 'Quarter Wave-Plate (0\u00b0)' },  complexOnly: true },
   GI:   { cat: 'unitary', apply: applyIdentity,          bk: { gate: 'I',   name: 'Identity Gate' }, pol: { type: 'glass',            name: 'Clear Glass' } }
@@ -229,7 +229,8 @@ const PAR = { real: 7, complex: 5 };
      index.html (ids qsq-arrow-*), shared by every SVG on the page. */
 
 const KET_SYM = { '0': '0', '1': '1', '+': '+', '-': '\u2212', '+i': '+<sub>i</sub>', '-i': '\u2212<sub>i</sub>' };
-const KET_PLAIN = { '0': '|0\u27e9', '1': '|1\u27e9', '+': '|+\u27e9', '-': '|\u2212\u27e9', '+i': '|+i\u27e9', '-i': '|\u2212i\u27e9' };
+// Spoken forms for screen readers ("ket plus i"), used in aria-labels.
+const KET_SPOKEN = { '0': 'ket 0', '1': 'ket 1', '+': 'ket plus', '-': 'ket minus', '+i': 'ket plus i', '-i': 'ket minus i' };
 
 // Kets are drawn with a CSS bar and an SVG angle bracket (instead of font
 // glyphs or KaTeX) so the bar and bracket are always exactly the same
@@ -239,11 +240,11 @@ const ANGLE_L = '<svg class="k-angle" viewBox="0 0 8 30" aria-hidden="true"><pol
 // A ket |k> as HTML: CSS bar + symbol + SVG right angle bracket. Scales with
 // the surrounding font size, so it works in tiles, card names and captions.
 function ketHTML(k){
-  return '<span class="ket"><span class="k-bar"></span><span class="k-sym">' + KET_SYM[k] + '</span>' + ANGLE_R + '</span>';
+  return '<span class="ket" role="img" aria-label="' + KET_SPOKEN[k] + '"><span class="k-bar"></span><span class="k-sym">' + KET_SYM[k] + '</span>' + ANGLE_R + '</span>';
 }
 // A projector |k><k| as HTML, built from the same bar/bracket pieces as ketHTML.
 function projectorHTML(k){
-  return '<span class="ket"><span class="k-bar"></span><span class="k-sym">' + KET_SYM[k] + '</span>' + ANGLE_R +
+  return '<span class="ket" role="img" aria-label="projector onto ' + KET_SPOKEN[k] + '"><span class="k-bar"></span><span class="k-sym">' + KET_SYM[k] + '</span>' + ANGLE_R +
          ANGLE_L + '<span class="k-sym">' + KET_SYM[k] + '</span><span class="k-bar"></span></span>';
 }
 
@@ -331,7 +332,7 @@ function bkCardInner(bk){
 function cardName(id, domain, plain){
   const c = CARDS[id];
   if (domain === 'polarization') return c.pol.name;
-  if (c.cat === 'projector') return 'Projector onto ' + (plain ? KET_PLAIN[c.bk.sym] : ketHTML(c.bk.sym));
+  if (c.cat === 'projector') return 'Projector onto ' + (plain ? KET_SPOKEN[c.bk.sym] : ketHTML(c.bk.sym));
   return c.bk.name;
 }
 // Bra-Ket caption: the state written out in the |0>,|1> basis, e.g.
@@ -341,8 +342,13 @@ function basisHTML(key){
   if (key === '0' || key === '1') return ketHTML(key);
   const sign = (key === '+' || key === '+i') ? '+' : '\u2212';
   const i = key.endsWith('i') ? '<i class="imag">i</i>' : '';
-  return '<span class="frac"><span class="frac-num">' + ketHTML('0') + '<span class="op">' + sign + '</span>' + i + ketHTML('1') + '</span>' +
+  const spoken = 'ket 0 ' + (sign === '+' ? 'plus' : 'minus') + (i ? ' i' : '') + ' ket 1, over square root of 2';
+  return '<span class="frac" role="img" aria-label="' + spoken + '"><span class="frac-num">' + ketHTML('0') + '<span class="op">' + sign + '</span>' + i + ketHTML('1') + '</span>' +
          '<span class="frac-den"><span class="sqrt">\u221a<span class="sqrt-arg">2</span></span></span></span>';
+}
+// Spoken name of a state, for announcements.
+function stateSpoken(key, domain){
+  return domain === 'polarization' ? stateByKey(key).pol.name.toLowerCase() + ' polarization' : KET_SPOKEN[key];
 }
 function stateName(key, domain){
   return domain === 'polarization' ? stateByKey(key).pol.name : basisHTML(key);
@@ -367,7 +373,7 @@ function stateTileHTML(key, domain, extra){
   const face = domain === 'polarization'
     ? '<div class="face">' + polStateSVG(s.pol) + '</div>'
     : '<div class="face face-ket">' + ketHTML(key) + '</div>';
-  const label = domain === 'polarization' ? s.pol.name + ' polarization' : KET_PLAIN[key];
+  const label = domain === 'polarization' ? s.pol.name + ' polarization' : KET_SPOKEN[key];
   return '<div class="tile tile-state ' + (extra || '') + '" role="img" aria-label="' + label + '">' + face + '</div>';
 }
 
@@ -394,8 +400,8 @@ const TEXT = {
 };
 const HINT = 'Play another object to increase your streak';
 const DOMAIN_NOTES = {
-  braket: 'Kets, projectors, and quantum gates: the standard notation of quantum computing.',
-  polarization: 'A single photon\u2019s polarization: polarizers, wave-plates, and maple syrup.'
+  braket: 'Play with Dirac bra-ket notation for gates and states.',
+  polarization: 'Play with polarization states and rotators.'
 };
 
 // Pacing of the play animation (ms). A survived play takes about half a
@@ -411,6 +417,7 @@ const TIMING = { depart: 90, travel: 180, shift: 240, flash: 320, milestoneDelay
 const settings = { domain: 'braket', complex: true, sound: true, animations: true, theme: 'dark' };
 const bestStreak = { real: 0, complex: 0 }; // per session, per numbers setting (par differs)
 let game = null;
+let refocusSlot = null; // hand slot to re-focus after the hand re-renders (keyboard users)
 
 // Short DOM helpers.
 function $(id){ return document.getElementById(id); }
@@ -432,12 +439,12 @@ function numbersNote(){
   // subscript, matching the kets everywhere else in the game.
   if (settings.complex){
     return (settings.domain === 'polarization'
-      ? 'Includes circular polarization and quarter-wave plates.'
-      : 'Includes the ' + ketHTML('+i') + ' and ' + ketHTML('-i') + ' states and the basis-change gates.') + ' Par: ' + par + '.';
+      ? 'Includes circular polarization and quarter-wave plates'
+      : 'Includes the ' + ketHTML('+i') + ' and ' + ketHTML('-i') + ' states and the basis-change gates') + '.';
   }
   return (settings.domain === 'polarization'
-    ? 'Linear polarization only: horizontal, vertical, and \u00b145\u00b0.'
-    : 'Only ' + ketHTML('0') + ', ' + ketHTML('1') + ', ' + ketHTML('+') + ' and ' + ketHTML('-') + ' can appear.') + ' Par: ' + par + '.';
+    ? 'Linear polarization only: horizontal, vertical, and \u00b145\u00b0'
+    : 'Only ' + ketHTML('0') + ', ' + ketHTML('1') + ', ' + ketHTML('+') + ' and ' + ketHTML('-') + ' can appear') + '.';
 }
 
 // The welcome screen's preview: one short sequence (|0> -> Hadamard ->
@@ -536,6 +543,9 @@ function playCard(idx){
   const id = game.hand[idx];
   const before = game.state;
   const result = resolvePlay(before, id); // randomness is decided here, up front
+  // Re-rendering replaces the card buttons; if a card had keyboard focus,
+  // put focus back on the same slot afterwards (see renderHand).
+  refocusSlot = document.activeElement && document.activeElement.classList.contains('hand-card') ? idx : null;
   SFX.cardFlip();
 
   if (!settings.animations){
@@ -813,6 +823,20 @@ function renderMessage(opts){
   const box = $('message');
   box.className = 'message ' + cls + (opts.msgAnim ? ' msg-in' : '');
   box.innerHTML = html;
+  // Screen readers: one announcement per new outcome — the message, then
+  // the new state and the streak (the banner and counter themselves are
+  // not live regions, so nothing is read twice).
+  if (opts.msgAnim){
+    // Join the banner's parts with spaces (textContent would run the title
+    // into the hint) and make sure each part ends with punctuation.
+    let line = Array.from(box.children).map(c => c.textContent.trim()).filter(Boolean)
+      .map(t => /[.!?]$/.test(t) ? t : t + '.').join(' ');
+    if (m.kind !== 'neutral'){
+      if (game.phase !== 'lost') line += ' Current state: ' + stateSpoken(stateKeyOf(game.state), settings.domain) + '.';
+      line += ' Streak ' + game.streak + '.';
+    }
+    $('sr-status').textContent = line;
+  }
 }
 
 // Shared stage pieces (used by the static stage and the play animation).
@@ -879,15 +903,16 @@ function renderHand(opts){
   const hand = $('hand');
   if (game.phase === 'lost'){
     hand.innerHTML = [0, 1, 2].map(i =>
-      '<button type="button" class="hand-card lost-card" data-idx="' + i + '"><span class="card-key">' + (i + 1) + '</span>' +
+      '<button type="button" class="hand-card lost-card" data-idx="' + i + '" aria-label="Start new game" aria-keyshortcuts="' + (i + 1) + '"><span class="card-key" aria-hidden="true">' + (i + 1) + '</span>' +
       '<span class="lost-text">Start New Game</span></button>').join('');
   } else {
     hand.innerHTML = game.hand.map((id, i) =>
-      '<button type="button" class="hand-card' + (opts.dealtIdx === i ? ' dealt' : '') + '" data-idx="' + i + '" aria-label="Play ' + cardName(id, d, true) + '">' +
-      '<span class="card-key">' + (i + 1) + '</span>' + cardTileHTML(id, d) +
+      '<button type="button" class="hand-card' + (opts.dealtIdx === i ? ' dealt' : '') + '" data-idx="' + i + '" aria-label="Play ' + cardName(id, d, true) + '" aria-keyshortcuts="' + (i + 1) + '">' +
+      '<span class="card-key" aria-hidden="true">' + (i + 1) + '</span>' + cardTileHTML(id, d) +
       '<span class="card-name">' + cardName(id, d) + '</span></button>').join('');
   }
   hand.querySelectorAll('.hand-card').forEach(b => b.addEventListener('click', () => playCard(Number(b.dataset.idx))));
+  if (refocusSlot !== null && !(game && game.busy)){ hand.children[refocusSlot].focus(); refocusSlot = null; }
 }
 
 /* ---------- Wiring ---------- */
@@ -926,6 +951,7 @@ function initUI(){
     setSound(settings.sound);
     showScreen('game-screen');
     startRun();
+    $('game-title').focus(); // move screen-reader/keyboard focus to the new screen
   });
 
   wirePillGroup($('domain-toggle'), v => setDomain(v));
@@ -935,7 +961,7 @@ function initUI(){
   // i.e. that `game` is still the object they started with) and releases
   // its busy lock immediately, so the setup screen's controls respond at
   // once instead of being ignored until the orphaned animation finishes.
-  $('menu-btn').addEventListener('click', () => { game = null; renderSetup(); showScreen('setup-screen'); });
+  $('menu-btn').addEventListener('click', () => { game = null; renderSetup(); showScreen('setup-screen'); $('setup-title').focus(); });
 
   // Keys 1-3 play the matching card (handy at a demo table).
   document.addEventListener('keydown', e => {

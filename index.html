@@ -69,14 +69,14 @@
 
   <!-- ===================== SETUP SCREEN ===================== -->
   <section id="setup-screen" class="screen active">
-    <div class="setup-card">
+    <main class="setup-card">
       <a class="logo-link" href="https://uwaterloo.ca/institute-for-quantum-computing/outreach" target="_blank" rel="noopener noreferrer">
         <img class="setup-logo logo-for-dark" src="UW_IQC_logo_reverse.png" alt="University of Waterloo — Institute for Quantum Computing">
         <img class="setup-logo logo-for-light" src="UW_IQC_logo.png" alt="University of Waterloo — Institute for Quantum Computing">
       </a>
       <div class="eyebrow">Institute for Quantum Computing · Outreach</div>
-      <h1>Qubit Survival Quest</h1>
-      <p class="tagline">Keep a single qubit alive as long as you can. Every object you put in its path either measures it, and might destroy it, or transforms it into a new state.</p>
+      <h1 id="setup-title" tabindex="-1">Qubit Survival Quest</h1>
+      <p class="tagline">Survive the gauntlet and keep your qubit alive as long as you can.</p>
 
       <!-- Live preview: redrawn in whichever qubit style is selected, so
            switching styles here visibly swaps every piece for its twin. -->
@@ -86,16 +86,16 @@
            is locked once the quest starts; Sound/Theme are also in the header. -->
       <div class="setup-grid">
         <div class="setup-field setup-field-wide">
-          <label id="setup-domain-label">Qubit style</label>
+          <span class="field-label" id="setup-domain-label">Qubit style</span>
           <div class="pill-group" id="setup-domain" role="group" aria-labelledby="setup-domain-label">
             <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
             <button type="button" class="pill" data-value="polarization">Polarization</button>
           </div>
-          <p class="mode-note mode-note-inline"><span id="domain-note"></span> You can switch styles mid-game: every object has an exact twin.</p>
+          <p class="mode-note mode-note-inline"><span id="domain-note"></span> Switch at any time. </p>
         </div>
 
         <div class="setup-field setup-field-wide">
-          <label id="setup-numbers-label">Numbers</label>
+          <span class="field-label" id="setup-numbers-label">Numbers</span>
           <div class="pill-group" id="setup-numbers" role="group" aria-labelledby="setup-numbers-label">
             <button type="button" class="pill" data-value="real">Real-Only</button>
             <button type="button" class="pill active" data-value="complex">Complex</button>
@@ -104,25 +104,25 @@
         </div>
 
         <div class="setup-field">
-          <label>Sound</label>
+          <span class="field-label" id="sound-label">Sound</span>
           <div class="toggle-row">
             <span class="toggle-off-label">Off</span>
-            <button type="button" class="switch active" id="sound-toggle" role="switch" aria-checked="true" aria-label="Sound"><span class="knob"></span></button>
+            <button type="button" class="switch active" id="sound-toggle" role="switch" aria-checked="true" aria-labelledby="sound-label"><span class="knob"></span></button>
             <span class="toggle-on-label">On</span>
           </div>
         </div>
 
         <div class="setup-field">
-          <label>Animations</label>
+          <span class="field-label" id="anim-label">Animations</span>
           <div class="toggle-row">
             <span class="toggle-off-label">Off</span>
-            <button type="button" class="switch active" id="anim-toggle" role="switch" aria-checked="true" aria-label="Animations"><span class="knob"></span></button>
+            <button type="button" class="switch active" id="anim-toggle" role="switch" aria-checked="true" aria-labelledby="anim-label"><span class="knob"></span></button>
             <span class="toggle-on-label">On</span>
           </div>
         </div>
 
         <div class="setup-field">
-          <label>Theme</label>
+          <span class="field-label" id="theme-label">Theme</span>
           <div class="toggle-row">
             <span class="toggle-off-label">Light</span>
             <button type="button" class="switch active" id="theme-toggle" role="switch" aria-checked="true" aria-label="Dark theme"><span class="knob"></span></button>
@@ -135,33 +135,32 @@
 
       <details class="rules-disclosure">
         <summary>Your mission</summary>
-        <p>A single qubit has just been prepared in the state |0⟩. In Polarization style, that's a horizontally polarized photon. Each turn, you place one object from your hand in its path.</p>
-        <p>Some objects measure the qubit and might destroy it. Others transform it into a new state. How long can you keep it alive?</p>
+        <p>Your precious qubit has been prepared in the state |0⟩. Each turn, you must place one object from your hand in its path.</p>
+        <p>Some objects measure the qubit and might destroy it. Others transform it into a new state. How long can your qubit survive?</p>
       </details>
 
       <details class="rules-disclosure">
         <summary>How to play</summary>
         <ol>
-          <li>Pick one of the three objects in your hand. Click it, or press <strong>1</strong>, <strong>2</strong> or <strong>3</strong>.</li>
-          <li><strong>Measurements</strong> (projectors, polarizers) always let the qubit through if it already matches them, never if it's orthogonal, and half the time otherwise. A qubit that gets through ends up in the measurement's own state.</li>
-          <li><strong>Gates</strong> (wave-plates, maple syrup, clear glass) always let the qubit through, but can change its state.</li>
-          <li>Each object the qubit survives adds one to your streak. Par is the average streak for a careful player who always takes a guaranteed-safe object when they have one.</li>
-          <li>Switch between Bra-Ket and Polarization at any point. Your run carries on exactly as it was, just drawn differently.</li>
+          <li>Pick one of the three objects in your hand. Click it, or enter <strong>1</strong>, <strong>2</strong> or <strong>3</strong>.</li>
+          <li><strong>Measurements</strong> (projectors and polarizers) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
+          <li><strong>Gates and rotators</strong> always let the qubit through, but can change its state.</li>
+          <li>Each object the qubit survives adds one to your streak. Try to beat the odds and beat par!</li>
         </ol>
       </details>
 
       <details class="rules-disclosure">
-        <summary>Object twins</summary>
-        <p>Each Bra-Ket object and its Polarization twin do exactly the same thing to the qubit.</p>
+        <summary>Object equivalents</summary>
+        <p>The below objects do exactly the same thing to the qubit depending on if we visualize it as bra-ket or photon polarization. You can switch between the two modes at any time without affecting your streak. Some objects only appear if Complex Numbers are enabled.</p>
         <div class="twins-scroll"><table class="twins-table" id="twins-table"></table></div>
       </details>
 
       <details class="rules-disclosure">
         <summary>Credits</summary>
-        <p>Developed by the IQC Scientific Outreach team in 2026 with the assistance of artificial intelligence, as a companion to the <em>Superposition and Measurement Lab</em> and the lesson plans on IQC's <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach/quantum-educators/teacher-resources" target="_blank" rel="noopener noreferrer">teacher resources page</a>.</p>
+        <p>Developed by the Scientific Outreach team at the Institute for Quantum Computing (IQC) of the University of Waterloo in 2026 as a companion to the <a href="https://iqc-scientific-outreach.github.io/iqc-simulators/" target="_blank" rel="noopener noreferrer"><em>Superposition and Measurement Lab</em></a>  and the lesson plans on IQC's <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach/quantum-educators/teacher-resources" target="_blank" rel="noopener noreferrer">teacher resources page</a>. Inspired by an activity from <a href="https://quantumforall.org/" target="_blank" rel="noopener noreferrer">Quantum for All</a>. The development of the user interface relied on artificial intelligence tools.</p>
         <p>Contact <a href="mailto:iqc-outreach@uwaterloo.ca">iqc-outreach@uwaterloo.ca</a> with any questions.</p>
       </details>
-    </div>
+    </main>
   </section>
 
   <!-- ===================== GAME SCREEN ===================== -->
@@ -172,7 +171,7 @@
         <img class="header-logo logo-for-dark" src="UW_IQC_logo_reverse.png" alt="University of Waterloo — Institute for Quantum Computing">
         <img class="header-logo logo-for-light" src="UW_IQC_logo.png" alt="University of Waterloo — Institute for Quantum Computing">
       </a>
-      <div class="game-title">Qubit Survival Quest</div>
+      <h1 class="game-title" id="game-title" tabindex="-1">Qubit Survival Quest</h1>
       <div class="header-controls">
         <div class="pill-group pill-group-compact" id="domain-toggle" role="group" aria-label="Qubit style">
           <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
@@ -196,7 +195,7 @@
         <section class="scoreboard" aria-label="Score">
           <div class="streak-block">
             <div class="stat-label">Current streak</div>
-            <div class="streak-num" id="streak-num" aria-live="polite">0</div>
+            <div class="streak-num" id="streak-num">0</div>
           </div>
           <div class="side-stats">
             <div class="side-stat"><span class="stat-label">Par</span><span class="stat-val" id="par-num">5</span></div>
@@ -205,17 +204,17 @@
           </div>
         </section>
 
-        <section class="message neutral" id="message" aria-live="polite"></section>
+        <section class="message neutral" id="message" aria-label="Last outcome"></section>
       </div>
 
       <!-- The stage: a fixed-width window over a sliding track of slots
            (prior state -> object -> current state -> next object), joined
            by the beam. See renderStage() and animatePlay() in app.js. -->
-      <section class="stage-panel" id="stage-panel">
+      <section class="stage-panel" id="stage-panel" aria-label="Stage: prior state, object, current state">
         <div class="stage" id="stage"></div>
         <div class="history">
           <span class="history-label">This run</span>
-          <div class="history-strip" id="history-strip"></div>
+          <div class="history-strip" id="history-strip" role="group" aria-label="Objects survived this run"></div>
         </div>
       </section>
 
@@ -229,6 +228,10 @@
   </section>
 
 </div>
+
+<!-- Screen-reader announcements: one status line per play (outcome, new
+     state, streak), written by app.js. Visually hidden. -->
+<div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
 
 <!-- audio.js first: app.js uses its global SFX. -->
 <script src="audio.js"></script>

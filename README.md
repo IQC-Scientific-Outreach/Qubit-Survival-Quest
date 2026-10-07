@@ -222,3 +222,34 @@ Bugs found and fixed in the debugging pass:
 - Leaving for the main menu mid-animation briefly ignored the setup
   screen's style buttons.
 - The stage clipped at about 561–640 px wide and at 320 px.
+
+## Accessibility
+
+Audited with an in-page checker on every screen, both themes, at rest:
+control names, text alternatives, contrast (computed from rendered colors,
+including opacity and gradients), landmarks/headings, labels, plus a
+keyboard focus walk. Zero findings after the fixes below. Behaviour was
+verified separately with scripted keyboard tests.
+
+- **Keyboard:** everything is a native button. Keys 1–3 play cards
+  (advertised with `aria-keyshortcuts`, and held keys don't auto-repeat).
+  Focus stays on the same card slot after a play, and moves to the new
+  screen's heading on Begin / Main menu. Visible focus rings everywhere.
+- **Screen readers:** each play produces one announcement, from a hidden
+  status line: outcome, new state, streak ("State transformed! … Current
+  state: ket plus. Streak 1."). Kets, projectors and the basis-expansion
+  fractions have spoken labels ("ket 0 plus i ket 1, over square root of
+  2"). Switches use `role="switch"` + `aria-checked`, pills use
+  `aria-pressed`, and the stage and history have labels.
+- **Contrast (WCAG AA):**
+  - "Begin quest" was 2.2:1; it's now white on a deeper red.
+  - The basis-change "U" was 4.1:1; it's now 5.4:1.
+  - The light-mode state blue was deepened.
+  - The prior-state ket is dimmed by color rather than opacity, so even
+    its subscript meets 4.5:1.
+- **Structure:** one `<h1>` per screen, and a `<main>` landmark on both.
+- **Motion:** Animations default to off under `prefers-reduced-motion`, and
+  CSS disables all motion there too.
+
+Not automatable, so worth a check with a real screen reader (NVDA/JAWS/
+VoiceOver): the reading order and verbosity of the stage during play.
