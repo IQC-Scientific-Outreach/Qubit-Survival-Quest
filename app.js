@@ -107,16 +107,17 @@ function applyQWP(v, deg){
 function applyY(v){
   return { prob: 1, out: { x: cMul(cx(0, -1), v.y), y: cMul(cx(0, 1), v.x) } };
 }
-// The two basis changes. Each exchanges two measurement bases exactly, the
-// way Hadamard exchanges Z and X: Z <-> Y (|0> <-> |+i>, |1> <-> |-i>) or
-// X <-> Y (|+> <-> |+i>, |-> <-> |-i>), and, like Hadamard, flips the third
-// basis (|+> <-> |->, or |0> <-> |1>). On the Poincare sphere that is a
-// half-turn about an axis halfway between the two swapped ones. A single
-// quarter-wave plate can't do it (it turns only a quarter-turn, so one of the
-// two bases comes back flipped), and no single linear wave-plate has an
-// axis off the equator, but a half-wave plate followed by a quarter-wave
-// plate does it exactly. (Swapping two bases WITHOUT flipping the third would
-// be a mirror image of the sphere, which no gate can do.)
+// Analogy style's basis changes. Bra-Ket and Polarization use real
+// quarter-wave plates, which turn the sphere a quarter-turn: Z <-> Y comes
+// out as |0> -> |+i> but |+i> -> |1>, i.e. one direction arrives flipped.
+// Analogy instead exchanges the two bases exactly, the way Hadamard
+// exchanges Z and X: Z <-> Y (|0> <-> |+i>, |1> <-> |-i>) or X <-> Y
+// (|+> <-> |+i>, |-> <-> |-i>), and, like Hadamard, flips the third basis.
+// That is a half-turn about an axis halfway between the two swapped ones
+// (swapping two bases WITHOUT flipping the third would be a mirror image of
+// the sphere, which no gate can do). Physically it is a half-wave plate
+// followed by a quarter-wave plate. Because the two versions differ, an
+// Analogy run can't switch to the other styles mid-game (see setDomain).
 function applySwapZY(v){ return applyQWP(applyHWP(v, 0).out, 45); }
 function applySwapXY(v){ return applyQWP(applyHWP(v, 45).out, 0); }
 // Identity gate / clear glass: always passes, state unchanged.
@@ -155,8 +156,9 @@ function stateByKey(key){ return STATES.find(s => s.key === key); }
 // three twin renderings; `complexOnly` objects are removed in Real-only games
 // (they are exactly the ones that reach the |+-i> / circular states).
 // `an` (Analogy style) says what the object does to the X/Y/Z boxes:
-// declare [box, bit], or swap [[a, b]] then flip [boxes]. Testing checks
-// every `an` entry against `apply` on all six states.
+// declare [box, bit], or swap [[a, b]] then flip [boxes]. An `an.apply`
+// replaces `apply` in Analogy runs (only the two basis changes have one).
+// Testing checks every `an` entry against its matrix on all six states.
 const CARDS = {
   P0:   { cat: 'projector', apply: v => project(v, vecLinear(0)),     bk: { sym: '0' },  pol: { type: 'polarizer', angle: 0,   name: 'Horizontal Polarizer' }, an: { declare: ['Z', 0] } },
   P1:   { cat: 'projector', apply: v => project(v, vecLinear(90)),    bk: { sym: '1' },  pol: { type: 'polarizer', angle: 90,  name: 'Vertical Polarizer' },   an: { declare: ['Z', 1] } },
@@ -168,8 +170,8 @@ const CARDS = {
   GX:   { cat: 'unitary', apply: v => applyHWP(v, 45),   bk: { gate: 'X',   name: 'Pauli-X Gate' },  pol: { type: 'hwp', angle: 45,   name: 'Half Wave-Plate (45\u00b0)' },  an: { flip: ['Z', 'Y'] } },
   GY:   { cat: 'unitary', apply: applyY,                 bk: { gate: 'Y',   name: 'Pauli-Y Gate' },  pol: { type: 'syrup',            name: 'Maple Syrup (optically active)' }, an: { flip: ['Z', 'X'] } },
   GH:   { cat: 'unitary', apply: v => applyHWP(v, 22.5), bk: { gate: 'H',   name: 'Hadamard Gate' }, pol: { type: 'hwp', angle: 22.5, name: 'Half Wave-Plate (22.5\u00b0)' }, an: { swap: [['X', 'Z']], flip: ['Y'] } },
-  GUZY: { cat: 'unitary', apply: applySwapZY, bk: { gate: 'UZY', name: 'Basis Change (Z\u2194Y)' }, pol: { type: 'stack', hwp: 0,  qwp: 45, name: 'Half + Quarter Wave-Plates (0\u00b0, 45\u00b0)' }, an: { swap: [['Z', 'Y']], flip: ['X'] }, complexOnly: true },
-  GUXY: { cat: 'unitary', apply: applySwapXY, bk: { gate: 'UXY', name: 'Basis Change (X\u2194Y)' }, pol: { type: 'stack', hwp: 45, qwp: 0,  name: 'Half + Quarter Wave-Plates (45\u00b0, 0\u00b0)' }, an: { swap: [['X', 'Y']], flip: ['Z'] }, complexOnly: true },
+  GUZY: { cat: 'unitary', apply: v => applyQWP(v, 45),   bk: { gate: 'UZY', name: 'Basis Change (Z\u2194Y)' }, pol: { type: 'qwp', angle: 45, name: 'Quarter Wave-Plate (45\u00b0)' }, an: { swap: [['Z', 'Y']], flip: ['X'], apply: applySwapZY }, complexOnly: true },
+  GUXY: { cat: 'unitary', apply: v => applyQWP(v, 0),    bk: { gate: 'UXY', name: 'Basis Change (X\u2194Y)' }, pol: { type: 'qwp', angle: 0,  name: 'Quarter Wave-Plate (0\u00b0)' },  an: { swap: [['X', 'Y']], flip: ['Z'], apply: applySwapXY }, complexOnly: true },
   GI:   { cat: 'unitary', apply: applyIdentity,          bk: { gate: 'I',   name: 'Identity Gate' }, pol: { type: 'glass',            name: 'Clear Glass' },                  an: {} }
 };
 const CARD_ORDER = ['P0', 'P1', 'PP', 'PM', 'PL', 'PR', 'GZ', 'GX', 'GY', 'GH', 'GUZY', 'GUXY', 'GI'];
@@ -204,13 +206,21 @@ function classify(prob){
   return 'random';
 }
 
-// Resolves playing card `id` on state `v`. `outcome` is exactly one of
-// the lab's message kinds: success | lucky | rotated | unchanged (the qubit
-// survived) or unlucky | orthogonal (it was lost, and why).
-function resolvePlay(v, id, rng){
+// The matrix a card applies: its Analogy version in Analogy runs, if it has
+// one (the basis changes), otherwise the shared one.
+function applyFor(id, analogy){
+  const c = CARDS[id];
+  return (analogy && c.an.apply) || c.apply;
+}
+
+// Resolves playing card `id` on state `v` (`analogy`: an Analogy run).
+// `outcome` is exactly one of the lab's message kinds: success | lucky |
+// rotated | unchanged (the qubit survived) or unlucky | orthogonal (it was
+// lost, and why).
+function resolvePlay(v, id, rng, analogy){
   rng = rng || Math.random;
   const card = CARDS[id];
-  const r = card.apply(v);
+  const r = applyFor(id, analogy)(v);
   const cls = classify(r.prob);
   const survives = cls === 'transmit' ? true : (cls === 'absorbed' ? false : rng() < r.prob);
   let outcome;
@@ -222,10 +232,11 @@ function resolvePlay(v, id, rng){
 
 // Par = mean streak (rounded) for a careful player who always plays a
 // guaranteed-safe object when holding one, else a 50/50 object — from a
-// 300,000-game Monte Carlo per setting (means 6.85 Real-only, 5.46
-// Complex; re-run after the basis changes became exact swaps, which nudged
-// Complex up from 5.36 without changing par). All qubit styles share one
-// deck, so they share par. (Matches the lab's Bra-Ket par values.)
+// 500,000-game Monte Carlo per setting. Bra-Ket and Polarization share one
+// deck, so they share par. (Matches the lab's Bra-Ket par values.) Analogy's
+// exact-swap basis changes nudge the Three Box mean up by about 0.1 (about
+// 5.4 -> 5.45 over 300,000 games each), which still rounds to the same par;
+// Two Box has no basis changes, so it is identical to Real-only.
 const PAR = { real: 7, complex: 5 };
 
 /* ===================== 5. MARKUP ===================== */
@@ -307,13 +318,6 @@ function polCardSVG(pol){
   if (pol.type === 'hwp' || pol.type === 'qwp'){
     return svgWrap('<g transform="rotate(' + (-pol.angle) + ')">' + SQUARE(pol.type === 'qwp' ? 'sq-qwp' : 'sq-hwp') +
       '<line class="wp-slow" x1="0" y1="-24" x2="0" y2="24"/><line class="wp-fast" x1="-24" y1="0" x2="24" y2="0"/></g>');
-  }
-  if (pol.type === 'stack'){
-    // Two plates in a row (half-wave behind, quarter-wave in front), each
-    // drawn smaller and turned to its own fast-axis angle.
-    const plate = (dx, angle, cls) => '<g transform="translate(' + dx + ',' + dx + ') scale(0.68) rotate(' + (-angle) + ')">' + SQUARE(cls) +
-      '<line class="wp-slow" x1="0" y1="-24" x2="0" y2="24"/><line class="wp-fast" x1="-24" y1="0" x2="24" y2="0"/></g>';
-    return svgWrap(plate(-8, pol.hwp, 'sq-hwp') + plate(8, pol.qwp, 'sq-qwp'));
   }
   if (pol.type === 'syrup'){
     // Maple syrup: an amber square with syrup dripping from its top edge
@@ -560,6 +564,12 @@ const DOMAIN_NOTES = {
   polarization: 'Play with polarization states and rotators.',
   analogy: 'Play with three boxes: one known bit, and two that are random until you check.'
 };
+// Follows DOMAIN_NOTES on the setup screen: what can change mid-game.
+const DOMAIN_SWITCH_NOTES = {
+  braket: 'Switch to Polarization at any time.',
+  polarization: 'Switch to Bra-Ket at any time.',
+  analogy: 'Fixed for the whole quest.'
+};
 const DOMAINS = ['braket', 'polarization', 'analogy'];
 // The Numbers setting's labels. Analogy calls Real-only / Complex "Two Box"
 // / "Three Box", since that is all the setting changes there.
@@ -635,7 +645,7 @@ function renderTwinsTable(){
   const cell = (id, d) => '<td><div class="twin-cell">' + cardTileHTML(id, d, '', true) + '<span>' + cardName(id, d, false, true) + '</span></div></td>';
   const rows = CARD_ORDER.map(id =>
     '<tr>' + cell(id, 'braket') + cell(id, 'polarization') + cell(id, 'analogy') +
-    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + '</td></tr>').join('');
+    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + (CARDS[id].an.apply ? '<br>Analogy: exact swap*' : '') + '</td></tr>').join('');
   $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th></th></tr></thead><tbody>' + rows + '</tbody>';
 }
 
@@ -650,7 +660,7 @@ function renderSetup(){
     sw.classList.toggle('active', on);
     sw.setAttribute('aria-checked', String(on));
   });
-  $('domain-note').textContent = DOMAIN_NOTES[settings.domain];
+  $('domain-note').textContent = DOMAIN_NOTES[settings.domain] + ' ' + DOMAIN_SWITCH_NOTES[settings.domain];
   const nl = NUMBERS_LABELS[settings.domain === 'analogy' ? 'analogy' : 'standard'];
   $('setup-numbers-label').textContent = nl.field;
   $('setup-numbers').querySelectorAll('.pill').forEach(p => { p.textContent = nl[p.dataset.value]; });
@@ -686,8 +696,11 @@ function wirePillGroup(group, onChange){
 //   parBeaten, newBest
 //                   milestone flags, each fires once per run
 //   busy            true while a play animation runs; blocks input
+//   analogy         an Analogy run: its basis changes are exact swaps, so
+//                   it can't switch to Bra-Ket / Polarization (or back)
 function startRun(){
   game = {
+    analogy: settings.domain === 'analogy',
     state: STATES[0].vec,
     hand: [drawCard(settings.complex), drawCard(settings.complex), drawCard(settings.complex)],
     streak: 0,
@@ -714,7 +727,7 @@ function playCard(idx){
 
   const id = game.hand[idx];
   const before = game.state;
-  const result = resolvePlay(before, id); // randomness is decided here, up front
+  const result = resolvePlay(before, id, undefined, game.analogy); // randomness is decided here, up front
   // Re-rendering replaces the card buttons; if a card had keyboard focus,
   // put focus back on the same slot afterwards (see renderHand).
   refocusSlot = document.activeElement && document.activeElement.classList.contains('hand-card') ? idx : null;
@@ -1007,12 +1020,15 @@ function finishAnimatedPlay(idx, hits, survived, stageOpts){
   milestoneSound(hits);
 }
 
-// Switches the qubit style (Bra-Ket / Polarization / Analogy). The run
-// itself is untouched, since all styles share the abstract deck; only
-// drawing changes.
+// Switches the qubit style (Bra-Ket / Polarization / Analogy). Bra-Ket and
+// Polarization share one physics, so a run can switch between them with
+// nothing changing but the drawing. Analogy's basis changes differ (see
+// applySwapZY), so mid-game it can't be switched to or from; that choice
+// is made on the setup screen.
 function setDomain(d){
   if (!DOMAINS.includes(d)) return; // values come from data-* attributes; accept only known styles
   if (game && game.busy) return; // re-rendering mid-animation would tear down the sliding track
+  if (game && $('game-screen').classList.contains('active') && (d === 'analogy') !== game.analogy) return;
   settings.domain = d;
   if ($('game-screen').classList.contains('active')) renderGame({ flip: true });
   renderSetup();
@@ -1043,6 +1059,13 @@ function renderGame(opts){
 // Syncs the header controls: style toggle, theme switch, mute button.
 function renderHeader(){
   setPillGroup($('domain-toggle'), settings.domain);
+  // Only the styles this run can switch to are enabled (see setDomain).
+  $('domain-toggle').querySelectorAll('.pill').forEach(p => {
+    const locked = (p.dataset.value === 'analogy') !== game.analogy;
+    p.disabled = locked;
+    p.title = locked ? (game.analogy ? 'Analogy runs stay in Analogy. Choose another style from the main menu.'
+                                     : 'Analogy is chosen from the main menu, before a quest starts.') : '';
+  });
   const th = $('theme-toggle-header');
   th.classList.toggle('active', settings.theme === 'dark');
   th.setAttribute('aria-checked', String(settings.theme === 'dark'));

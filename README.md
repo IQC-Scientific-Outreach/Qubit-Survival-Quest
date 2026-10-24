@@ -24,15 +24,18 @@ This is a static site: no build step, no dependencies.
 
 | Setting | Options | Default | Changeable mid-game? |
 |---|---|---|---|
-| Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Yes (header toggle) |
+| Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Bra-Ket ↔ Polarization only (header toggle); Analogy is locked in once the quest starts |
 | Numbers | Real-Only / Complex (called Two Box / Three Box in Analogy) | Complex | No — locked in once the quest starts |
 | Sound | On / Off | On | Yes (header mute button) |
 | Animations | On / Off | On (Off if the system asks for reduced motion) | No — set on the welcome screen |
 | Theme | Light / Dark | Dark | Yes (header ☀/☾ switch) |
 
-Numbers is locked because it changes the deck (and therefore par); qubit style
-only changes how things are drawn, so it can change at any time without
-affecting the run.
+Numbers is locked because it changes the deck (and therefore par). Switching
+between Bra-Ket and Polarization only changes how things are drawn, so it can
+happen at any time without affecting the run. Analogy's two basis changes
+behave differently (see below), so it is chosen on the setup screen and
+can't be switched to or from mid-game; the header disables the styles a run
+can't use.
 
 ## Gameplay (identical to the lab's Game mode)
 
@@ -58,7 +61,9 @@ affecting the run.
 
 Every object is one abstract card in `app.js` (`CARDS`) with a Bra-Ket,
 a Polarization and an Analogy rendering. Gameplay only touches the abstract
-card, which is what makes mid-game switching safe.
+card, which is what makes mid-game switching between Bra-Ket and
+Polarization safe. Analogy matches them object for object, except that its
+basis changes are exact swaps (marked * below).
 
 | Bra-Ket | Polarization | Analogy | In Real-Only / Two Box? |
 |---|---|---|---|
@@ -72,33 +77,26 @@ card, which is what makes mid-game switching safe.
 | Pauli-X Gate | Not / X Half Wave-Plate (45°) | Flip Z & Y | Yes |
 | Pauli-Y Gate | **Maple Syrup** (new; 90° rotation) | Flip Z & X | Yes |
 | Hadamard Gate | Hadamard Half Wave-Plate (22.5°) | Swap X ↔ Z, flip Y | Yes |
-| Basis Change (Z↔Y) | **Half + Quarter Wave-Plates** (0°, 45°) | Swap Z ↔ Y, flip X | No |
-| Basis Change (X↔Y) | **Half + Quarter Wave-Plates** (45°, 0°) | Swap X ↔ Y, flip Z | No |
+| Basis Change (Z↔Y) | Quarter Wave-Plate (45°) | Swap Z ↔ Y, flip X * | No |
+| Basis Change (X↔Y) | Quarter Wave-Plate (0°) | Swap X ↔ Y, flip Z * | No |
 | Identity Gate | Clear Glass | Nothing changes | Yes |
 
 In Two Box games the Y box is hidden everywhere, so for example Hadamard
 reads "Swap X ↔ Z" and Pauli-Z reads "Flip X".
 
-**About the basis changes:** they are exact swaps of two measurement bases,
-the same kind of gate as Hadamard: Z↔Y sends |0⟩ ↔ |+i⟩ and |1⟩ ↔ |−i⟩
-and flips |+⟩ ↔ |−⟩; X↔Y sends |+⟩ ↔ |+i⟩ and |−⟩ ↔ |−i⟩ and flips
-|0⟩ ↔ |1⟩. (Each is a half-turn of the Bloch / Poincaré sphere about an axis
-halfway between the two swapped ones; swapping two bases *without* flipping
-the third would be a mirror image of the sphere, which no gate can do.) A
-single quarter-wave plate, which the lab uses, only turns a quarter-turn,
-so one of the two swapped bases comes back flipped (e.g. |+i⟩ → |1⟩, not
-|0⟩). That made the Analogy cards read "swap, then flip one of them", so the
-game now uses the exact swap. No single linear wave-plate does that (its
-axis is off the sphere's equator), but a half-wave plate followed by a
-quarter-wave plate does, so that pair is the Polarization twin.
-
-**Circular states and handedness:** |±i⟩ = (|0⟩ ± i|1⟩)/√2, the standard
-quantum-information definitions (|+i⟩ is Y's +1 eigenstate). Handedness names
-follow the lab's optics (Hecht) convention, where right-circular is
-(1, −i)/√2, so |+i⟩ is *left*-circular here. Under the helicity convention the
-names swap; the physics doesn't. Note: the Superposition and Measurement Lab
-currently pairs |+i⟩ with right-circular, which under its own convention makes
-its "|+i⟩" the vector (1, −i)/√2 — Y's −1 eigenstate. Worth fixing there too.
+**\* About the Analogy's basis changes:** Bra-Ket and Polarization keep the
+lab's physics: each basis change is a real quarter-wave plate, a quarter-turn
+of the Bloch / Poincaré sphere. The QWP at 0° leaves Z alone and exchanges X
+and Y, but one direction comes back flipped (|+⟩ → |+i⟩, while |+i⟩ → |−⟩).
+In the Analogy that would read "swap, then flip one of them", so the
+Analogy's versions exchange the two bases exactly, the way Hadamard does,
+and (also like Hadamard) flip the third: Z↔Y sends |0⟩ ↔ |+i⟩ and
+|1⟩ ↔ |−i⟩ and flips X; X↔Y sends |+⟩ ↔ |+i⟩ and |−⟩ ↔ |−i⟩ and flips Z.
+(Swapping two bases *without* flipping the third would be a mirror image of
+the sphere, which no gate can do.) Each is a half-turn about an axis halfway
+between the two swapped ones, physically a half-wave plate followed by a
+quarter-wave plate. These live in `applySwapZY` / `applySwapXY`, used only
+in Analogy runs (`an.apply` in `CARDS`, chosen by `applyFor`).
 
 ## Analogy style
 
@@ -127,7 +125,8 @@ The stage is one large set of boxes rather than the beam: [last object] →
 edge into each other's box and flipped boxes spin over. A declaration
 stamps "Z = 1" onto its box, which pulses gold if it was already true or
 flashes red if false, and a random box stops and shows what it came up as.
-On a loss the boxes grey out under an ✕. Phones drop the "next object"
+On a loss the boxes grey out under an ✕. Analogy is chosen before the quest
+starts and stays for the whole run. Phones drop the "next object"
 placeholder to give the boxes more room. The `an` entries in `CARDS` and
 `STATES` hold this mapping, and testing checks every one against the
 actual gate matrices.
@@ -154,14 +153,14 @@ share one deck, so they share par.
 
 | Numbers | Mean streak | Par |
 |---|---|---|
-| Real-Only / Two Box | 6.85 | 7 |
-| Complex / Three Box | 5.46 | 5 |
+| Real-Only | 6.87 | 7 |
+| Complex | 5.27 | 5 |
 
 Re-simulated on this game's own deck (300,000 games per setting) and matching
-the lab's Bra-Ket par values. Making the basis changes exact swaps moved the
-Complex mean from 5.36 to 5.46 (same simulated player, before and after)
-but left par unchanged. (Earlier versions of this table listed 5.27, from a
-slightly different simulated player.) Stored as `PAR` in `app.js`; re-run a simulation if
+the lab's Bra-Ket values. Analogy uses the same par. Two Box has no basis
+changes, so it is the same game as Real-Only. In Three Box, the exact-swap
+basis changes raise the mean by about 0.1 (5.39 → 5.45 in a 300,000-game
+run with a slightly different simulated player), which doesn't change par. Stored as `PAR` in `app.js`; re-run a simulation if
 the deck or draw weighting ever changes.
 
 Two milestones fire once per run: **Par beaten!** (streak passes par, with a
@@ -263,10 +262,13 @@ Checked with headless Chromium during development:
   (declarations: probability 1 / 0 / ½ and the right collapse; gates: the
   stated swaps and flips). Par was re-simulated on this exact deck.
 - **Analogy stress test:** 3,000 instant and 250 animated random actions
-  across all three styles and both Numbers settings, checking after each
-  that the stage shows exactly one known box with the right bit, the right
-  number of foggy boxes, no Y box in Two Box games, and no leftover
-  animation state.
+  across all three styles and both Numbers settings, including attempts to
+  switch into or out of Analogy mid-game. After each action it checks that
+  the stage shows exactly one known box with the right bit, the right
+  number of foggy boxes, no Y box in Two Box games, no leftover animation
+  state, and that the run's style family never changed.
+- **Shared physics unchanged:** every Bra-Ket / Polarization object gives the
+  same probabilities and output states as before Analogy was added.
 - **Stress test:** 5,000 random actions with animations off (plays, style
   and theme switches, mute, menu exits, restarts with random Numbers), and
   120 animated plays with interference landing mid-animation. After every

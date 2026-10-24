@@ -267,6 +267,9 @@ h1{
   transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
 .pill:hover{ border-color: var(--quantum-deep); color: var(--ink); }
+/* A style this run can't switch to (Analogy vs. the other two). */
+.pill:disabled{ opacity: 0.4; cursor: not-allowed; }
+.pill:disabled:hover{ border-color: var(--hairline); color: var(--ink-dim); }
 .pill.active{
   background: linear-gradient(135deg, var(--quantum-deep), var(--quantum));
   border-color: var(--quantum-bright);
