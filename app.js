@@ -116,8 +116,10 @@ function applyY(v){
 // That is a half-turn about an axis halfway between the two swapped ones
 // (swapping two bases WITHOUT flipping the third would be a mirror image of
 // the sphere, which no gate can do). Physically it is a half-wave plate
-// followed by a quarter-wave plate. Because the two versions differ, an
-// Analogy run can't switch to the other styles mid-game (see setDomain).
+// followed by a quarter-wave plate. A run started in Analogy uses these
+// for the whole run, including while it is shown in Bra-Ket (whose "U"
+// cards can stand for either version); Polarization's twin is a real
+// quarter-wave plate, so Analogy runs can't show it (see runDomains).
 function applySwapZY(v){ return applyQWP(applyHWP(v, 0).out, 45); }
 function applySwapXY(v){ return applyQWP(applyHWP(v, 45).out, 0); }
 // Identity gate / clear glass: always passes, state unchanged.
@@ -568,7 +570,7 @@ const DOMAIN_NOTES = {
 const DOMAIN_SWITCH_NOTES = {
   braket: 'Switch to Polarization at any time.',
   polarization: 'Switch to Bra-Ket at any time.',
-  analogy: 'Fixed for the whole quest.'
+  analogy: 'Switch to Bra-Ket at any time.'
 };
 const DOMAINS = ['braket', 'polarization', 'analogy'];
 // The Numbers setting's labels. Analogy calls Real-only / Complex "Two Box"
@@ -645,7 +647,7 @@ function renderTwinsTable(){
   const cell = (id, d) => '<td><div class="twin-cell">' + cardTileHTML(id, d, '', true) + '<span>' + cardName(id, d, false, true) + '</span></div></td>';
   const rows = CARD_ORDER.map(id =>
     '<tr>' + cell(id, 'braket') + cell(id, 'polarization') + cell(id, 'analogy') +
-    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + (CARDS[id].an.apply ? '<br>Analogy: exact swap*' : '') + '</td></tr>').join('');
+    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + (CARDS[id].an.apply ? '<br>Analogy runs: exact swap*' : '') + '</td></tr>').join('');
   $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th></th></tr></thead><tbody>' + rows + '</tbody>';
 }
 
@@ -696,8 +698,8 @@ function wirePillGroup(group, onChange){
 //   parBeaten, newBest
 //                   milestone flags, each fires once per run
 //   busy            true while a play animation runs; blocks input
-//   analogy         an Analogy run: its basis changes are exact swaps, so
-//                   it can't switch to Bra-Ket / Polarization (or back)
+//   analogy         the run started in Analogy: its basis changes are
+//                   exact swaps for the whole run (see runDomains)
 function startRun(){
   game = {
     analogy: settings.domain === 'analogy',
@@ -1020,15 +1022,21 @@ function finishAnimatedPlay(idx, hits, survived, stageOpts){
   milestoneSound(hits);
 }
 
-// Switches the qubit style (Bra-Ket / Polarization / Analogy). Bra-Ket and
-// Polarization share one physics, so a run can switch between them with
-// nothing changing but the drawing. Analogy's basis changes differ (see
-// applySwapZY), so mid-game it can't be switched to or from; that choice
-// is made on the setup screen.
+// The styles a run can be shown in. Switching between them only changes the
+// drawing. A run started in Analogy uses exact-swap basis changes
+// (applySwapZY), which Bra-Ket's "U" cards can stand for but a real
+// quarter-wave plate can't; a run started in Bra-Ket or Polarization uses
+// real quarter-wave plates, which Analogy's swap cards can't show.
+function runDomains(g){
+  return g.analogy ? ['analogy', 'braket'] : ['braket', 'polarization'];
+}
+
+// Switches the qubit style (Bra-Ket / Polarization / Analogy). Mid-game,
+// only to a style the run can be shown in (runDomains).
 function setDomain(d){
   if (!DOMAINS.includes(d)) return; // values come from data-* attributes; accept only known styles
   if (game && game.busy) return; // re-rendering mid-animation would tear down the sliding track
-  if (game && $('game-screen').classList.contains('active') && (d === 'analogy') !== game.analogy) return;
+  if (game && $('game-screen').classList.contains('active') && !runDomains(game).includes(d)) return;
   settings.domain = d;
   if ($('game-screen').classList.contains('active')) renderGame({ flip: true });
   renderSetup();
@@ -1061,9 +1069,9 @@ function renderHeader(){
   setPillGroup($('domain-toggle'), settings.domain);
   // Only the styles this run can switch to are enabled (see setDomain).
   $('domain-toggle').querySelectorAll('.pill').forEach(p => {
-    const locked = (p.dataset.value === 'analogy') !== game.analogy;
+    const locked = !runDomains(game).includes(p.dataset.value);
     p.disabled = locked;
-    p.title = locked ? (game.analogy ? 'Analogy runs stay in Analogy. Choose another style from the main menu.'
+    p.title = locked ? (game.analogy ? 'Not available in a quest started in Analogy. Choose it from the main menu.'
                                      : 'Analogy is chosen from the main menu, before a quest starts.') : '';
   });
   const th = $('theme-toggle-header');

@@ -24,7 +24,7 @@ This is a static site: no build step, no dependencies.
 
 | Setting | Options | Default | Changeable mid-game? |
 |---|---|---|---|
-| Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Bra-Ket ↔ Polarization only (header toggle); Analogy is locked in once the quest starts |
+| Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Yes (header toggle): Bra-Ket ↔ Polarization in quests started in either; Analogy ↔ Bra-Ket in quests started in Analogy |
 | Numbers | Real-Only / Complex (called Two Box / Three Box in Analogy) | Complex | No — locked in once the quest starts |
 | Sound | On / Off | On | Yes (header mute button) |
 | Animations | On / Off | On (Off if the system asks for reduced motion) | No — set on the welcome screen |
@@ -33,9 +33,13 @@ This is a static site: no build step, no dependencies.
 Numbers is locked because it changes the deck (and therefore par). Switching
 between Bra-Ket and Polarization only changes how things are drawn, so it can
 happen at any time without affecting the run. Analogy's two basis changes
-behave differently (see below), so it is chosen on the setup screen and
-can't be switched to or from mid-game; the header disables the styles a run
-can't use.
+behave differently (see below), so which physics a run uses is set by the
+style it starts in. A quest started in Analogy uses the exact swaps
+throughout and can switch between Analogy and Bra-Ket, whose "U" basis-change
+cards then stand for the exact swaps. It can't show Polarization, whose twin
+is a real quarter-wave plate. A quest started in Bra-Ket or Polarization uses
+real quarter-wave plates and can't switch to Analogy. The header disables
+the styles a run can't use (`runDomains` in `app.js`).
 
 ## Gameplay (identical to the lab's Game mode)
 
@@ -96,7 +100,8 @@ and (also like Hadamard) flip the third: Z↔Y sends |0⟩ ↔ |+i⟩ and
 the sphere, which no gate can do.) Each is a half-turn about an axis halfway
 between the two swapped ones, physically a half-wave plate followed by a
 quarter-wave plate. These live in `applySwapZY` / `applySwapXY`, used only
-in Analogy runs (`an.apply` in `CARDS`, chosen by `applyFor`).
+in quests started in Analogy, including while they are shown in Bra-Ket
+(`an.apply` in `CARDS`, chosen by `applyFor`).
 
 ## Analogy style
 
@@ -125,8 +130,8 @@ The stage is one large set of boxes rather than the beam: [last object] →
 edge into each other's box and flipped boxes spin over. A declaration
 stamps "Z = 1" onto its box, which pulses gold if it was already true or
 flashes red if false, and a random box stops and shows what it came up as.
-On a loss the boxes grey out under an ✕. Analogy is chosen before the quest
-starts and stays for the whole run. Phones drop the "next object"
+On a loss the boxes grey out under an ✕. A quest started in Analogy can
+switch to Bra-Ket and back at any time, but not to Polarization. Phones drop the "next object"
 placeholder to give the boxes more room. The `an` entries in `CARDS` and
 `STATES` hold this mapping, and testing checks every one against the
 actual gate matrices.
@@ -263,10 +268,10 @@ Checked with headless Chromium during development:
   stated swaps and flips). Par was re-simulated on this exact deck.
 - **Analogy stress test:** 3,000 instant and 250 animated random actions
   across all three styles and both Numbers settings, including attempts to
-  switch into or out of Analogy mid-game. After each action it checks that
+  switch to every style mid-game. After each action it checks that
   the stage shows exactly one known box with the right bit, the right
   number of foggy boxes, no Y box in Two Box games, no leftover animation
-  state, and that the run's style family never changed.
+  state, and that the run is only ever shown in a style it allows.
 - **Shared physics unchanged:** every Bra-Ket / Polarization object gives the
   same probabilities and output states as before Analogy was added.
 - **Stress test:** 5,000 random actions with animations off (plays, style
