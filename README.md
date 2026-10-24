@@ -16,6 +16,11 @@ This is a static site: no build step, no dependencies.
 - **GitHub Pages**: push this folder to a repo, then in
   **Settings → Pages** set the source to the branch/root containing these
   files.
+- **Releasing an update**: bump the `?v=` tag on `style.css`, `audio.js` and
+  `app.js` in `index.html` (all three, same value). GitHub Pages lets browsers
+  cache files for about 10 minutes, and a fresh `index.html` with a stale
+  cached `app.js` leaves new controls dead (this is what made the Split Decks
+  pill unresponsive right after it shipped).
 - **Offline**: everything works without internet except the Barlow Condensed
   heading font, which falls back to a system font. Kets are drawn with CSS and
   SVG rather than KaTeX, so there's no CDN dependency for the math.
@@ -25,7 +30,7 @@ This is a static site: no build step, no dependencies.
 | Setting | Options | Default | Changeable mid-game? |
 |---|---|---|---|
 | Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Yes (header toggle): Bra-Ket ↔ Polarization in quests started in either; Analogy ↔ Bra-Ket in quests started in Analogy |
-| Deck | Mixed Deck / Split Decks | Mixed Deck | No — locked in once the quest starts |
+| Deck | Mixed Deck / Split Decks (the note under it, `DECK_NOTES` in `app.js`, has its own text per deck and style) | Mixed Deck | No — locked in once the quest starts |
 | Numbers | Real-Only / Complex (called Two Box / Three Box in Analogy) | Complex | No — locked in once the quest starts |
 | Sound | On / Off | On | Yes (header mute button) |
 | Animations | On / Off | On (Off if the system asks for reduced motion) | No — set on the welcome screen |

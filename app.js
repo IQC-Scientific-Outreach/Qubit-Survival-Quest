@@ -601,10 +601,19 @@ const TEXT = {
   }
 };
 const HINT = 'Play another object to increase your streak';
+// Setup-screen note under the Deck pills: one entry per deck and qubit style,
+// so each can be reworded on its own.
 const DECK_NOTES = {
-  mixed: 'Three objects from one shuffled deck. Every object the qubit survives adds to your streak.',
-  split: (t) => 'Two ' + t.measDock.toLowerCase() + ' and two ' + t.gateDock.toLowerCase() + ', in separate docks. Only ' +
-    t.measDock.toLowerCase() + ' add to your streak; each one passed earns back a used ' + t.gate + '.'
+  mixed: {
+    braket: 'Gates and projectors are mixed.',
+    polarization: 'Rotators and polarizers are mixed.',
+    analogy: 'Swaps and declarations are mixed.'
+  },
+  split: {
+    braket: 'Gates and projectors are separate.',
+    polarization: 'Rotators and polarizers are separate.',
+    analogy: 'Swaps and declarations are separate.'
+  }
 };
 const DOMAIN_NOTES = {
   braket: 'Play with Dirac bra-ket notation for gates and states.',
@@ -706,7 +715,7 @@ function renderSetup(){
   setPillGroup($('setup-domain'), settings.domain);
   setPillGroup($('setup-numbers'), settings.complex ? 'complex' : 'real');
   setPillGroup($('setup-deck'), settings.deck);
-  $('deck-note').textContent = settings.deck === 'split' ? DECK_NOTES.split(TEXT[settings.domain]) : DECK_NOTES.mixed;
+  $('deck-note').textContent = DECK_NOTES[settings.deck][settings.domain];
   [['sound-toggle', settings.sound], ['anim-toggle', settings.animations], ['theme-toggle', settings.theme === 'dark']].forEach(([swId, on]) => {
     const sw = $(swId);
     sw.classList.toggle('active', on);
