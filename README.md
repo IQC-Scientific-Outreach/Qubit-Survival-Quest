@@ -25,12 +25,14 @@ This is a static site: no build step, no dependencies.
 | Setting | Options | Default | Changeable mid-game? |
 |---|---|---|---|
 | Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Yes (header toggle): Bra-Ket ↔ Polarization in quests started in either; Analogy ↔ Bra-Ket in quests started in Analogy |
+| Deck | Mixed Deck / Split Decks | Mixed Deck | No — locked in once the quest starts |
 | Numbers | Real-Only / Complex (called Two Box / Three Box in Analogy) | Complex | No — locked in once the quest starts |
 | Sound | On / Off | On | Yes (header mute button) |
 | Animations | On / Off | On (Off if the system asks for reduced motion) | No — set on the welcome screen |
 | Theme | Light / Dark | Dark | Yes (header ☀/☾ switch) |
 
-Numbers is locked because it changes the deck (and therefore par). Switching
+Deck and Numbers are locked because they change the rules or the deck (and
+therefore par); neither has an in-game control. Switching
 between Bra-Ket and Polarization only changes how things are drawn, so it can
 happen at any time without affecting the run. Analogy's two basis changes
 behave differently (see below), so which physics a run uses is set by the
@@ -41,7 +43,9 @@ is a real quarter-wave plate. A quest started in Bra-Ket or Polarization uses
 real quarter-wave plates and can't switch to Analogy. The header shows only
 the two styles a run can use (`runDomains` in `app.js`).
 
-## Gameplay (identical to the lab's Game mode)
+## Gameplay
+
+Mixed Deck is identical to the lab's Game mode; Split Decks is new (below).
 
 - The qubit starts in |0⟩ (a horizontally polarized photon).
 - You hold three objects. Play one per turn (click, or press 1/2/3).
@@ -60,6 +64,23 @@ the two styles a run can use (`runDomains` in `app.js`).
 - All message text matches the lab ("Successful Transmission!", "You got lucky
   that time!", "State transformed!" / "Polarization state rotated!",
   "Nothing happens!", "Qubit Lost!" / "Photon Lost!", and both loss reasons).
+
+### Split Decks
+
+- You hold **two projectors and two gates** (polarizers and rotators in
+  Polarization, declarations and gates in Analogy), shown as two docks side
+  by side: four cards in one row, keys 1–4.
+- **Only projectors add to the streak.** Gates still always pass and can
+  change the state, but score nothing.
+- A played projector is replaced at once from the projector pile. A played
+  gate leaves its slot **empty**, and each projector the qubit survives
+  earns **one** gate back (into the first empty slot). So after using both
+  gates, one projector refills one of them.
+- Each pile is uniform within its category; the identity / clear glass stays
+  in the gate pile as a dud.
+- Why gates don't refill instantly: free, instantly replaced gates let a
+  player cycle them until a projector is certain. In simulation that never
+  lost (100% of games reached a 1,000-projector cap).
 
 ## Object twins (the 1:1 deck mapping)
 
@@ -155,13 +176,25 @@ generated from `CARDS` so it can't drift out of sync.
 ## Par
 
 Par is the mean streak (rounded) for a careful player who always plays a
-guaranteed-safe object when holding one, otherwise a 50/50 one. All styles
-share one deck, so they share par.
+guaranteed-safe object when holding one, otherwise a 50/50 one. In Split
+Decks the same player also uses the gates in hand (any order) to reach the
+best odds it can, using as few gates as possible. All styles share one deck,
+so they share par.
 
-| Numbers | Mean streak | Par |
-|---|---|---|
-| Real-Only | 6.87 | 7 |
-| Complex | 5.27 | 5 |
+| Deck | Numbers | Mean streak | Par | Perfect play |
+|---|---|---|---|---|
+| Mixed Deck | Real-Only | 6.87 | 7 | 9.1 |
+| Mixed Deck | Complex | 5.27 | 5 | 6.3 |
+| Split Decks | Real-Only | 5.42 | 5 | 8.7 |
+| Split Decks | Complex | 3.68 | 4 | 4.75 |
+
+"Perfect play" is the exact best expected streak (value iteration), showing
+how far a strong player can beat par: about 1.2–1.6× in every case. Split
+Decks streaks count only projectors, so they aren't comparable with Mixed
+Deck streaks. For Split Decks, other hand sizes were also simulated (e.g.
+3 + 2: par 8 / 6, perfect play 29 / 11; 3 + 3: perfect play 192 Real), and
+2 + 2 kept the skill ceiling close to the Mixed Deck's. Analogy's exact-swap
+basis changes give a Split Decks Complex mean of 4.00, also par 4.
 
 Re-simulated on this game's own deck (300,000 games per setting) and matching
 the lab's Bra-Ket values. Analogy uses the same par. Two Box has no basis
@@ -173,7 +206,7 @@ the deck or draw weighting ever changes.
 Two milestones fire once per run: **Par beaten!** (streak passes par, with a
 fanfare) and **New best!** (streak passes your best from before the run —
 not shown on the very first run of a session). Best streak is kept per
-Numbers setting for the browser session only; nothing is stored.
+Deck and Numbers setting for the browser session only; nothing is stored.
 
 ## File overview
 
@@ -268,6 +301,12 @@ Checked with headless Chromium during development:
   vector. Every Analogy card matches its object's matrix on all six states
   (declarations: probability 1 / 0 / ½ and the right collapse; gates: the
   stated swaps and flips). Par was re-simulated on this exact deck.
+- **Split Decks:** a scripted check of the refill rule (two gates used, one
+  projector passed, one gate back, one slot still empty; empty slots can't
+  be played), and the stress test below with a random deck each quest. It
+  checks that projector slots only hold projectors, gate slots only gates or
+  empties, the empty placeholders match, par matches the deck, and the
+  streak counts only projectors.
 - **Analogy stress test:** 3,000 instant and 250 animated random actions
   across all three styles and both Numbers settings, including attempts to
   switch to every style mid-game. After each action it checks that

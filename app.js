@@ -199,6 +199,28 @@ function drawCard(complex, rng){
   return from[Math.floor(rng() * from.length)];
 }
 
+// Split Decks: the hand is two docks, SPLIT.projectors projectors (slots
+// 0-1) then SPLIT.gates gates (slots 2-3), each refilled from its own pile,
+// uniform within the category (the identity stays in as a dud). A played
+// projector is replaced at once; a played gate leaves its slot empty, and
+// each projector the qubit survives refills one empty gate slot. Only
+// projectors add to the streak. (Refilling gates instantly would let a
+// player cycle free gates until a projector is certain: an endless game.)
+const DECKS = ['mixed', 'split'];
+const SPLIT = { projectors: 2, gates: 2 };
+function drawFrom(cat, complex, rng){
+  rng = rng || Math.random;
+  const from = poolFor(complex).filter(id => CARDS[id].cat === cat);
+  return from[Math.floor(rng() * from.length)];
+}
+function startingHand(deck, complex, rng){
+  if (deck === 'split'){
+    return Array.from({ length: SPLIT.projectors }, () => drawFrom('projector', complex, rng))
+      .concat(Array.from({ length: SPLIT.gates }, () => drawFrom('unitary', complex, rng)));
+  }
+  return [drawCard(complex, rng), drawCard(complex, rng), drawCard(complex, rng)];
+}
+
 // Buckets a Born-rule probability into certain pass / certain loss / coin
 // flip. Every probability this deck can produce is exactly 0, 1/2 or 1 (the
 // states form a closed set); the 0.01 margins only absorb floating-point error.
@@ -239,7 +261,11 @@ function resolvePlay(v, id, rng, analogy){
 // exact-swap basis changes nudge the Three Box mean up by about 0.1 (about
 // 5.4 -> 5.45 over 300,000 games each), which still rounds to the same par;
 // Two Box has no basis changes, so it is identical to Real-only.
-const PAR = { real: 7, complex: 5 };
+// Split Decks (300,000 games, same careful player, who also uses the gates
+// in hand to reach the best odds, fewest gates first): means 5.42 Real-only
+// and 3.68 Complex (4.00 for Analogy's exact swaps), so par 5 and 4 for
+// every style. Perfect play (value iteration) reaches 8.7 and 4.75.
+const PAR = { mixed: { real: 7, complex: 5 }, split: { real: 5, complex: 4 } };
 
 /* ===================== 5. MARKUP ===================== */
 /* Design reference — how every tile is built:
@@ -542,7 +568,12 @@ const TEXT = {
     unlucky: 'You got unlucky and the qubit was absorbed',
     orthogonal: 'The projector was orthogonal to the state',
     rotated: 'State transformed!',
-    priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost'
+    priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost',
+    // Split Decks wording: the two docks, and what scores / earns a gate.
+    measDock: 'Projectors', gateDock: 'Gates', gate: 'gate',
+    score: 'Pass another projector to increase your streak',
+    scoreGate: 'Pass a projector to increase your streak',
+    earn: 'Pass a projector to earn a gate'
   },
   polarization: {
     neutral: 'Play an object from your hand and try to help the photon survive.',
@@ -550,7 +581,11 @@ const TEXT = {
     unlucky: 'You got unlucky and the photon was absorbed',
     orthogonal: 'The polarizer was orthogonal to the state',
     rotated: 'Polarization state rotated!',
-    priorCap: 'Prior photon state', currentCap: 'Current photon state', lostLabel: 'Absorbed'
+    priorCap: 'Prior photon state', currentCap: 'Current photon state', lostLabel: 'Absorbed',
+    measDock: 'Polarizers', gateDock: 'Rotators', gate: 'rotator',
+    score: 'Pass another polarizer to increase your streak',
+    scoreGate: 'Pass a polarizer to increase your streak',
+    earn: 'Pass a polarizer to earn a rotator'
   },
   analogy: {
     neutral: 'Play an object from your hand and try to help the qubit survive.',
@@ -558,10 +593,19 @@ const TEXT = {
     unlucky: 'That box was random and came up the other way',
     orthogonal: 'That declaration was false',
     rotated: 'Boxes changed!',
-    priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost'
+    priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost',
+    measDock: 'Declarations', gateDock: 'Gates', gate: 'gate',
+    score: 'Make another true declaration to increase your streak',
+    scoreGate: 'Make a true declaration to increase your streak',
+    earn: 'Make a true declaration to earn a gate'
   }
 };
 const HINT = 'Play another object to increase your streak';
+const DECK_NOTES = {
+  mixed: 'Three objects from one shuffled deck. Every object the qubit survives adds to your streak.',
+  split: (t) => 'Two ' + t.measDock.toLowerCase() + ' and two ' + t.gateDock.toLowerCase() + ', in separate docks. Only ' +
+    t.measDock.toLowerCase() + ' add to your streak; each one passed earns back a used ' + t.gate + '.'
+};
 const DOMAIN_NOTES = {
   braket: 'Play with Dirac bra-ket notation for gates and states.',
   polarization: 'Play with polarization states and rotators.',
@@ -591,14 +635,18 @@ const NUMBERS_LABELS = {
 //   flash   — on a loss, how long the object flashes red before the slide
 const TIMING = { depart: 90, travel: 180, shift: 240, flash: 320, milestoneDelay: 380 };
 
-const settings = { domain: 'braket', complex: true, sound: true, animations: true, theme: 'dark' };
-const bestStreak = { real: 0, complex: 0 }; // per session, per numbers setting (par differs)
+const settings = { domain: 'braket', deck: 'mixed', complex: true, sound: true, animations: true, theme: 'dark' };
+const bestStreak = {}; // per session, per deck + numbers setting (par differs), e.g. bestStreak['split-real']
 let game = null;
 let refocusSlot = null; // hand slot to re-focus after the hand re-renders (keyboard users)
 
 // Short DOM helpers.
 function $(id){ return document.getElementById(id); }
 function modeKey(){ return settings.complex ? 'complex' : 'real'; }
+function parFor(){ return PAR[settings.deck][modeKey()]; }
+function bestKey(){ return settings.deck + '-' + modeKey(); }
+function bestFor(){ return bestStreak[bestKey()] || 0; }
+function isSplit(){ return settings.deck === 'split'; }
 
 /* ---------- Screens ---------- */
 
@@ -611,7 +659,6 @@ function showScreen(id){
 /* ---------- Setup screen ---------- */
 
 function numbersNote(){
-  const par = PAR[modeKey()];
   // Returns HTML: kets are drawn with ketHTML() so |+i> shows its i as a
   // subscript, matching the kets everywhere else in the game.
   if (settings.domain === 'analogy'){
@@ -658,6 +705,8 @@ function renderTwinsTable(){
 function renderSetup(){
   setPillGroup($('setup-domain'), settings.domain);
   setPillGroup($('setup-numbers'), settings.complex ? 'complex' : 'real');
+  setPillGroup($('setup-deck'), settings.deck);
+  $('deck-note').textContent = settings.deck === 'split' ? DECK_NOTES.split(TEXT[settings.domain]) : DECK_NOTES.mixed;
   [['sound-toggle', settings.sound], ['anim-toggle', settings.animations], ['theme-toggle', settings.theme === 'dark']].forEach(([swId, on]) => {
     const sw = $(swId);
     sw.classList.toggle('active', on);
@@ -701,18 +750,20 @@ function wirePillGroup(group, onChange){
 //   busy            true while a play animation runs; blocks input
 //   analogy         the run started in Analogy: its basis changes are
 //                   exact swaps for the whole run (see runDomains)
+//   dealt, scored   the last play: hand slots that got a new card, and
+//                   whether it added to the streak (Split Decks gates don't)
 function startRun(){
   game = {
     analogy: settings.domain === 'analogy',
     state: STATES[0].vec,
-    hand: [drawCard(settings.complex), drawCard(settings.complex), drawCard(settings.complex)],
+    hand: startingHand(settings.deck, settings.complex), // Split Decks: null = an empty gate slot
     streak: 0,
     history: [],
     phase: 'ready',          // ready | success | lost
     lastCard: null,
     lastStateBefore: null,
     message: { kind: 'neutral' },
-    bestAtStart: bestStreak[modeKey()],
+    bestAtStart: bestFor(),
     parBeaten: false,
     newBest: false,
     busy: false
@@ -720,13 +771,17 @@ function startRun(){
   renderGame({ msgAnim: true });
 }
 
-// Plays hand card `idx` (0-2), or starts a new run if the qubit was lost.
-// The outcome, including any randomness, is decided immediately; the
-// animation (if enabled) only reveals it.
+// Plays hand card `idx` (0-2, or 0-3 in Split Decks), or starts a new run
+// if the qubit was lost. The outcome, including any randomness, is decided
+// immediately; the animation (if enabled) only reveals it.
 function playCard(idx){
   if (!game || game.busy) return;
-  if (!(Number.isInteger(idx) && idx >= 0 && idx < 3)) return; // only ever 0-2 (buttons / keys 1-3)
-  if (game.phase === 'lost'){ SFX.cardFlip(); startRun(); return; }
+  if (game.phase === 'lost'){
+    if (Number.isInteger(idx) && idx >= 0 && idx < 3){ SFX.cardFlip(); startRun(); }
+    return;
+  }
+  // Only ever a hand slot (buttons / keys 1-4) that holds a card.
+  if (!(Number.isInteger(idx) && idx >= 0 && idx < game.hand.length) || !game.hand[idx]) return;
 
   const id = game.hand[idx];
   const before = game.state;
@@ -740,7 +795,7 @@ function playCard(idx){
     const hits = commitPlay(idx, id, before, result);
     outcomeSound(result);
     milestoneSound(hits);
-    renderGame({ msgAnim: true, pop: result.survives, dealtIdx: result.survives ? idx : undefined,
+    renderGame({ msgAnim: true, pop: result.survives, scorePop: game.scored, dealt: game.dealt,
                  newMilestones: hits, lostFx: !result.survives });
     return;
   }
@@ -760,15 +815,34 @@ function commitPlay(idx, id, before, result){
   }
   game.state = result.out;
   game.history.push(id);
-  game.hand[idx] = drawCard(settings.complex);
-  game.streak++;
-  const key = modeKey();
-  bestStreak[key] = Math.max(bestStreak[key], game.streak);
-  const hits = [];
-  if (!game.parBeaten && game.streak > PAR[key]){ game.parBeaten = true; hits.push('par'); }
-  if (!game.newBest && game.bestAtStart > 0 && game.streak > game.bestAtStart){ game.newBest = true; hits.push('best'); }
   game.phase = 'success';
   game.message = { kind: result.outcome };
+  game.dealt = [idx];
+  game.scored = true;
+  if (isSplit()){
+    if (CARDS[id].cat === 'unitary'){
+      // A gate: no score, and its slot stays empty until a projector passes.
+      game.hand[idx] = null;
+      game.dealt = [];
+      game.scored = false;
+      return [];
+    }
+    game.hand[idx] = drawFrom('projector', settings.complex);
+    const empty = game.hand.indexOf(null, SPLIT.projectors);
+    if (empty >= 0){
+      game.hand[empty] = drawFrom('unitary', settings.complex);
+      game.dealt.push(empty);
+      game.message.earned = true;
+    }
+  } else {
+    game.hand[idx] = drawCard(settings.complex);
+  }
+  game.streak++;
+  const key = bestKey();
+  bestStreak[key] = Math.max(bestFor(), game.streak);
+  const hits = [];
+  if (!game.parBeaten && game.streak > parFor()){ game.parBeaten = true; hits.push('par'); }
+  if (!game.newBest && game.bestAtStart > 0 && game.streak > game.bestAtStart){ game.newBest = true; hits.push('best'); }
   return hits;
 }
 
@@ -905,9 +979,9 @@ function animatePlay(idx, id, before, result){
 // Disables the hand for the length of a play animation, and sends the
 // played card up out of the hand.
 function lockHand(idx){
-  $('hand').querySelectorAll('.hand-card').forEach((c, i) => {
+  $('hand').querySelectorAll('.hand-card').forEach(c => {
     c.disabled = true;
-    if (i === idx) c.classList.add('played');
+    if (Number(c.dataset.idx) === idx) c.classList.add('played');
   });
 }
 
@@ -1018,8 +1092,8 @@ function finishAnimatedPlay(idx, hits, survived, stageOpts){
   game.busy = false;
   renderStage(stageOpts || {}); // seamless: same picture as the slid track
   renderHistory();
-  renderScore({ pop: survived, newMilestones: hits });
-  renderHand({ dealtIdx: survived ? idx : undefined });
+  renderScore({ scorePop: survived && game.scored, newMilestones: hits });
+  renderHand({ dealt: survived ? game.dealt : undefined });
   milestoneSound(hits);
 }
 
@@ -1047,8 +1121,9 @@ function setDomain(d){
 
 // Redraws the whole game screen from `game` and `settings`. Options:
 //   msgAnim     animate the message banner in
-//   pop         pop the streak counter and the new current state
-//   dealtIdx    hand slot that just received a new card (deal animation)
+//   pop         pop the new current state
+//   scorePop    pop the streak counter (the play added to the streak)
+//   dealt       hand slots that just received a new card (deal animation)
 //   newMilestones  milestones reached this play (their chips pop)
 //   lostFx      shake the stage and pop the X (loss without animation)
 //   flip        flip every tile (after a style switch)
@@ -1085,9 +1160,9 @@ function renderHeader(){
 function renderScore(opts){
   const num = $('streak-num');
   num.textContent = game.streak;
-  if (opts.pop){ num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop'); }
-  $('par-num').textContent = PAR[modeKey()];
-  $('best-num').textContent = bestStreak[modeKey()];
+  if (opts.scorePop){ num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop'); }
+  $('par-num').textContent = parFor();
+  $('best-num').textContent = bestFor();
   const chips = [];
   if (game.parBeaten) chips.push('<span class="milestone milestone-par' + (opts.newMilestones && opts.newMilestones.includes('par') ? ' fresh' : '') + '">Par beaten!</span>');
   if (game.newBest) chips.push('<span class="milestone milestone-best' + (opts.newMilestones && opts.newMilestones.includes('best') ? ' fresh' : '') + '">New best!</span>');
@@ -1104,14 +1179,13 @@ function renderMessage(opts){
     cls = 'neutral'; html = '<div class="msg-neutral">' + t.neutral + '</div>';
   } else if (m.kind === 'lost'){
     cls = 'lost'; html = '<div class="msg-title">' + t.lost + '</div><div class="msg-sub">' + (m.reason === 'unlucky' ? t.unlucky : t.orthogonal) + '</div>';
-  } else if (m.kind === 'rotated'){
-    cls = 'rotated'; html = '<div class="msg-title">' + t.rotated + '</div><div class="msg-sub">' + HINT + '</div>';
-  } else if (m.kind === 'unchanged'){
-    cls = 'unchanged'; html = '<div class="msg-title">Nothing happens!</div><div class="msg-sub">' + HINT + '</div>';
-  } else if (m.kind === 'lucky'){
-    cls = 'success'; html = '<div class="msg-title">Successful Transmission!</div><div class="msg-sub">You got lucky that time! ' + HINT + '</div>';
+  } else if (m.kind === 'rotated' || m.kind === 'unchanged'){
+    // Split Decks gates don't score, so their hint points at the other dock.
+    const hint = isSplit() ? t.gateDock + ' don\u2019t add to your streak. ' + t.scoreGate + '.' : HINT;
+    cls = m.kind; html = '<div class="msg-title">' + (m.kind === 'rotated' ? t.rotated : 'Nothing happens!') + '</div><div class="msg-sub">' + hint + '</div>';
   } else {
-    cls = 'success'; html = '<div class="msg-title">Successful Transmission!</div><div class="msg-sub">' + HINT + '</div>';
+    const hint = (isSplit() ? t.score + '.' : HINT) + (m.earned ? ' You earned a new ' + t.gate + '.' : '');
+    cls = 'success'; html = '<div class="msg-title">Successful Transmission!</div><div class="msg-sub">' + (m.kind === 'lucky' ? 'You got lucky that time! ' : '') + hint + '</div>';
   }
   const box = $('message');
   box.className = 'message ' + cls + (opts.msgAnim ? ' msg-in' : '');
@@ -1219,24 +1293,43 @@ function renderHistory(){
   strip.scrollLeft = strip.scrollWidth;
 }
 
-// The three hand cards (or three "Start New Game" cards after a loss). Each
-// card's data-idx is its hand position, which playCard() validates.
+// The hand (or three "Start New Game" cards after a loss). Mixed Deck: three
+// cards in a row. Split Decks: four in a row, as two labelled docks:
+// projectors (slots 0-1) on the left, gates (slots 2-3) on the right; an
+// empty gate slot is a disabled placeholder saying how to earn a gate back.
+// Each card's data-idx is its hand position, which playCard() validates.
 function renderHand(opts){
   opts = opts || {};
-  const d = settings.domain;
+  const d = settings.domain, t = TEXT[d];
   const hand = $('hand');
+  const dealt = opts.dealt || [];
+  const card = (id, i) => id
+    ? '<button type="button" class="hand-card' + (dealt.includes(i) ? ' dealt' : '') + '" data-idx="' + i + '" aria-label="Play ' + cardName(id, d, true) + '" aria-keyshortcuts="' + (i + 1) + '">' +
+      '<span class="card-key" aria-hidden="true">' + (i + 1) + '</span>' + cardTileHTML(id, d) +
+      '<span class="card-name">' + cardName(id, d) + '</span></button>'
+    : '<button type="button" class="hand-card empty-slot" data-idx="' + i + '" disabled aria-label="Empty ' + t.gate + ' slot. ' + t.earn + '.">' +
+      '<span class="card-key" aria-hidden="true">' + (i + 1) + '</span>' + GHOST_TILE +
+      '<span class="card-name">' + t.earn + '</span></button>';
+  const split = isSplit() && game.phase !== 'lost';
+  hand.className = 'hand' + (split ? ' hand-split' : '');
   if (game.phase === 'lost'){
     hand.innerHTML = [0, 1, 2].map(i =>
       '<button type="button" class="hand-card lost-card" data-idx="' + i + '" aria-label="Start new game" aria-keyshortcuts="' + (i + 1) + '"><span class="card-key" aria-hidden="true">' + (i + 1) + '</span>' +
       '<span class="lost-text">Start New Game</span></button>').join('');
+  } else if (split){
+    const dock = (cls, label, from, to) => '<div class="dock ' + cls + '" role="group" aria-label="' + label + '"><div class="dock-label">' + label + '</div><div class="dock-cards">' +
+      game.hand.slice(from, to).map((id, k) => card(id, from + k)).join('') + '</div></div>';
+    hand.innerHTML = dock('dock-meas', t.measDock, 0, SPLIT.projectors) + dock('dock-gate', t.gateDock, SPLIT.projectors, game.hand.length);
   } else {
-    hand.innerHTML = game.hand.map((id, i) =>
-      '<button type="button" class="hand-card' + (opts.dealtIdx === i ? ' dealt' : '') + '" data-idx="' + i + '" aria-label="Play ' + cardName(id, d, true) + '" aria-keyshortcuts="' + (i + 1) + '">' +
-      '<span class="card-key" aria-hidden="true">' + (i + 1) + '</span>' + cardTileHTML(id, d) +
-      '<span class="card-name">' + cardName(id, d) + '</span></button>').join('');
+    hand.innerHTML = game.hand.map(card).join('');
   }
   hand.querySelectorAll('.hand-card').forEach(b => b.addEventListener('click', () => playCard(Number(b.dataset.idx))));
-  if (refocusSlot !== null && !(game && game.busy)){ hand.children[refocusSlot].focus(); refocusSlot = null; }
+  if (refocusSlot !== null && !(game && game.busy)){
+    // Back to the same slot, or the first playable card if that slot is now empty.
+    const same = hand.querySelector('.hand-card[data-idx="' + refocusSlot + '"]:not(:disabled)');
+    (same || hand.querySelector('.hand-card:not(:disabled)')).focus();
+    refocusSlot = null;
+  }
 }
 
 /* ---------- Wiring ---------- */
@@ -1265,6 +1358,8 @@ function initUI(){
 
   wirePillGroup($('setup-domain'), v => setDomain(v));
   wirePillGroup($('setup-numbers'), v => { settings.complex = v === 'complex'; renderSetup(); });
+  // The deck is chosen here only: there is no in-game control, so it can't change mid-quest.
+  wirePillGroup($('setup-deck'), v => { if (DECKS.includes(v)){ settings.deck = v; renderSetup(); } });
   $('sound-toggle').addEventListener('click', () => { setSound(!settings.sound); renderSetup(); });
   $('anim-toggle').addEventListener('click', () => { settings.animations = !settings.animations; renderSetup(); });
   $('theme-toggle').addEventListener('click', () => setTheme(settings.theme === 'dark' ? 'light' : 'dark'));
@@ -1287,13 +1382,13 @@ function initUI(){
   // once instead of being ignored until the orphaned animation finishes.
   $('menu-btn').addEventListener('click', () => { game = null; renderSetup(); showScreen('setup-screen'); $('setup-title').focus(); });
 
-  // Keys 1-3 play the matching card (handy at a demo table).
+  // Keys 1-3 (1-4 in Split Decks) play the matching card (handy at a demo table).
   document.addEventListener('keydown', e => {
     if (!$('game-screen').classList.contains('active')) return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.repeat) return; // holding a key down must not play a card per auto-repeat
     const n = Number(e.key);
-    if (n >= 1 && n <= 3){ e.preventDefault(); playCard(n - 1); }
+    if (n >= 1 && n <= 4){ e.preventDefault(); playCard(n - 1); } // playCard ignores slots that don't exist
   });
 
   renderSetup();
