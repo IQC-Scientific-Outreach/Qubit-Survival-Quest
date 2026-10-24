@@ -104,6 +104,15 @@
         </div>
 
         <div class="setup-field setup-field-wide">
+          <span class="field-label" id="setup-deck-label">Deck</span>
+          <div class="pill-group" id="setup-deck" role="group" aria-labelledby="setup-deck-label">
+            <button type="button" class="pill active" data-value="mixed">Mixed Deck</button>
+            <button type="button" class="pill" data-value="split">Split Decks</button>
+          </div>
+          <p class="mode-note mode-note-inline"><span id="deck-note"></span> Fixed for the whole quest.</p>
+        </div>
+
+        <div class="setup-field setup-field-wide">
           <span class="field-label" id="setup-numbers-label">Numbers</span>
           <div class="pill-group" id="setup-numbers" role="group" aria-labelledby="setup-numbers-label">
             <button type="button" class="pill" data-value="real">Real-Only</button>
@@ -151,10 +160,12 @@
       <details class="rules-disclosure">
         <summary>How to play</summary>
         <ol>
-          <li>Pick one of the three objects in your hand. Click it, or enter <strong>1</strong>, <strong>2</strong> or <strong>3</strong>.</li>
+          <li>Pick one of the objects in your hand. Click it, or enter its number (<strong>1</strong>, <strong>2</strong>, <strong>3</strong>, or <strong>4</strong> in Split Decks).</li>
           <li><strong>Measurements</strong> (projectors, polarizers and declarations) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
           <li><strong>Gates, rotators and box swaps/flips</strong> always let the qubit through, but can change its state.</li>
-          <li>Each object the qubit survives adds one to your streak. Try to beat the odds and beat par!</li>
+          <li><strong>Mixed Deck:</strong> you hold three objects drawn from one deck, and each object the qubit survives adds one to your streak.</li>
+          <li><strong>Split Decks:</strong> you hold two measurements and two gates, in separate docks. Only measurements add to your streak. A played gate leaves an empty slot, and each measurement the qubit survives earns one gate back, so use your gates to set up sure measurements.</li>
+          <li>Try to beat the odds and beat par!</li>
         </ol>
       </details>
 
