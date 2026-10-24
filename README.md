@@ -312,6 +312,10 @@ Checked with headless Chromium during development:
   checks that projector slots only hold projectors, gate slots only gates or
   empties, the empty placeholders match, par matches the deck, and the
   streak counts only projectors.
+- **Harsher stress runs:** the stress test below, repeated with the system
+  asking for reduced motion and with random window resizes (phone ↔
+  desktop) landing mid-animation, plus checks that a loss never counts as a
+  score and every play is announced. No failures, no page errors.
 - **Analogy stress test:** 3,000 instant and 250 animated random actions
   across all three styles and both Numbers settings, including attempts to
   switch to every style mid-game. After each action it checks that
@@ -346,6 +350,34 @@ control names, text alternatives, contrast (computed from rendered colors,
 including opacity and gradients), landmarks/headings, labels, plus a
 keyboard focus walk. Zero findings after the fixes below. Behaviour was
 verified separately with scripted keyboard tests.
+
+Re-audited after Analogy and Split Decks with **axe-core 4.10** (WCAG 2.0 /
+2.1 / 2.2 A and AA plus best practice): 120 screens, covering both themes,
+all three styles, both decks and both Numbers settings. Each screen set was
+setup (all disclosures open), game start, after a gate (an empty Split Decks
+slot), after a projector, and lost. **Zero violations** after these fixes:
+- The "Object equivalents" table's notes column had an empty header; it now
+  has a screen-reader-only "Notes".
+- The in-game header bar wasn't a landmark; it's now `role="banner"`.
+- **Windows High Contrast (forced colours):** the white logo vanished on a
+  white background, switches lost their knob (on/off unreadable), and the
+  selected pill differed only by bold text. Now the logo matching the
+  high-contrast background shows, switches keep a knob and a filled "on"
+  state, the selected pill is filled, and "Begin quest" has a border.
+- **Split Decks focus:** after a gate is played by keyboard its slot empties;
+  focus now moves to the nearest playable card in the same dock (the other
+  gate) instead of jumping back to card 1.
+
+Also checked: every Tab stop shows a focus ring, and hidden header styles
+and empty slots are skipped. Keys 1–4 match each card's `aria-keyshortcuts`.
+Each play makes exactly one announcement, including Split Decks' "Gates
+don't add to your streak" and "You earned a new gate". WCAG 1.4.12 text
+spacing (raised line, letter and word spacing) clips nothing at 1200 and
+390 px wide.
+
+Bug fixed in the same pass: with Animations off, losing the qubit made the
+streak counter do its "scored" pop, because the previous play's flag wasn't
+cleared on a loss.
 
 - **Keyboard:** everything is a native button. Keys 1–3 play cards
   (advertised with `aria-keyshortcuts`, and held keys don't auto-repeat).

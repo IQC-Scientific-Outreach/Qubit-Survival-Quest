@@ -705,7 +705,7 @@ function renderTwinsTable(){
   const rows = CARD_ORDER.map(id =>
     '<tr>' + cell(id, 'braket') + cell(id, 'polarization') + cell(id, 'analogy') +
     '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + (CARDS[id].an.apply ? '<br>Analogy runs: exact swap*' : '') + '</td></tr>').join('');
-  $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th></th></tr></thead><tbody>' + rows + '</tbody>';
+  $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th><span class="sr-only">Notes</span></th></tr></thead><tbody>' + rows + '</tbody>';
 }
 
 // Syncs every welcome-screen control and note with `settings`. Called after
@@ -817,6 +817,8 @@ function playCard(idx){
 function commitPlay(idx, id, before, result){
   game.lastCard = id;
   game.lastStateBefore = before;
+  game.dealt = [];
+  game.scored = false;   // reset first: a loss must not reuse the last play's flags
   if (!result.survives){
     game.phase = 'lost';
     game.message = { kind: 'lost', reason: result.outcome };
@@ -1334,9 +1336,16 @@ function renderHand(opts){
   }
   hand.querySelectorAll('.hand-card').forEach(b => b.addEventListener('click', () => playCard(Number(b.dataset.idx))));
   if (refocusSlot !== null && !(game && game.busy)){
-    // Back to the same slot, or the first playable card if that slot is now empty.
-    const same = hand.querySelector('.hand-card[data-idx="' + refocusSlot + '"]:not(:disabled)');
-    (same || hand.querySelector('.hand-card:not(:disabled)')).focus();
+    // Back to the same slot. If that slot is now empty (a Split Decks gate),
+    // the nearest playable card, preferring the same dock.
+    const dockOf = (i) => (split && i >= SPLIT.projectors) ? 1 : 0;
+    const from = refocusSlot;
+    const cards = Array.from(hand.querySelectorAll('.hand-card:not(:disabled)'));
+    cards.sort((a, b) => {
+      const ia = Number(a.dataset.idx), ib = Number(b.dataset.idx);
+      return (dockOf(ia) !== dockOf(from)) - (dockOf(ib) !== dockOf(from)) || Math.abs(ia - from) - Math.abs(ib - from);
+    });
+    if (cards.length) cards[0].focus();
     refocusSlot = null;
   }
 }
