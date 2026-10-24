@@ -73,7 +73,7 @@ Mixed Deck is identical to the lab's Game mode; Split Decks is new (below).
 ### Split Decks
 
 - You hold **two projectors and two gates** (polarizers and rotators in
-  Polarization, declarations and gates in Analogy), shown as two docks side
+  Polarization, declarations and swaps in Analogy), shown as two docks side
   by side: four cards in one row, keys 1–4.
 - **Only projectors add to the streak.** Gates still always pass and can
   change the state, but score nothing.

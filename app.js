@@ -594,10 +594,10 @@ const TEXT = {
     orthogonal: 'That declaration was false',
     rotated: 'Boxes changed!',
     priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost',
-    measDock: 'Declarations', gateDock: 'Gates', gate: 'gate',
+    measDock: 'Declarations', gateDock: 'Swaps', gate: 'swap',
     score: 'Make another true declaration to increase your streak',
     scoreGate: 'Make a true declaration to increase your streak',
-    earn: 'Make a true declaration to earn a gate'
+    earn: 'Make a true declaration to earn a swap'
   }
 };
 const HINT = 'Play another object to increase your streak';
