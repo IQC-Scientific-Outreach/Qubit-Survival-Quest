@@ -66,7 +66,8 @@
   --an-x: #ef5350; --an-x-rgb: 239,83,80;  --an-x-deep: #b71f1f;
   --an-y: #3fbf6a; --an-y-rgb: 63,191,106; --an-y-deep: #146b34;
   --an-z: #5b97f8; --an-z-rgb: 91,151,248; --an-z-deep: #1f5fbf;
-  --an-fog-edge: rgba(18,22,31,0.8);
+  --an-cloud: rgba(205,214,232,0.36);
+  --an-haze: rgba(18,22,31,0.55);
   --an-blank: #6d7586;
 
   /* Surfaces that differ by theme */
@@ -122,7 +123,8 @@
   --an-x: #c93734; --an-x-rgb: 201,55,52;
   --an-y: #1b7c41; --an-y-rgb: 27,124,65;
   --an-z: #2a63c4; --an-z-rgb: 42,99,196;
-  --an-fog-edge: rgba(255,255,255,0.75);
+  --an-cloud: rgba(255,255,255,0.75);
+  --an-haze: rgba(255,255,255,0.5);
 
   --page-glow-a: rgba(156,28,51,0.05);
   --page-glow-b: rgba(47,111,176,0.06);
@@ -268,8 +270,7 @@ h1{
 }
 .pill:hover{ border-color: var(--quantum-deep); color: var(--ink); }
 /* A style this run can't switch to (Analogy vs. the other two). */
-.pill:disabled{ opacity: 0.4; cursor: not-allowed; }
-.pill:disabled:hover{ border-color: var(--hairline); color: var(--ink-dim); }
+.pill[hidden]{ display: none; } /* a style this run can't switch to (see runDomains) */
 .pill.active{
   background: linear-gradient(135deg, var(--quantum-deep), var(--quantum));
   border-color: var(--quantum-bright);
@@ -743,25 +744,57 @@ h1{
   transition: transform .3s cubic-bezier(.45,0,.3,1);
 }
 .an-val{ font-weight: 700; font-size: 22cqi; line-height: 1; color: var(--ink); }
-/* A random box: a blurred reel of 0/1/0 sliding up and down under fog,
-   each box on its own period so they never move in step. At rest (motion
-   off) it sits halfway, showing half a 0 over half a 1. */
-.an-reel{
-  display: flex; flex-direction: column; align-items: center;
-  filter: blur(2px);
-  transform: translateY(16.7%);
-  animation: anReel 1.6s ease-in-out infinite alternate;
+/* A random box: a 0 and a 1 stacked on the same spot, always centred,
+   under drifting cloud. Each digit is masked by a soft-edged vertical
+   pattern three times the box's height, and the two patterns are exact
+   complements, so wherever one digit shows the other is hidden. Sliding
+   the masks (not the digits) fades the box through:
+     1 -> top of the 1 over the bottom of the 0 -> 0 -> top of the 0 over
+     the bottom of the 1 -> 1 ...
+   Each box runs on its own period so they never move in step. At rest
+   (motion off) the masks stop part-way, showing half of each digit. */
+.an-fog{
+  position: relative;
+  display: grid; place-items: center;
+  filter: blur(2.2px);
 }
-.an-reel span{ font-weight: 700; font-size: 18cqi; line-height: 1.1; color: var(--ink); opacity: 0.75; }
-.an-tok[data-b="X"] .an-reel{ animation-duration: 1.3s; }
-.an-tok[data-b="Z"] .an-reel{ animation-duration: 1.9s; animation-delay: -.6s; }
-.an-boxes.still .an-reel{ animation: none; }
-.an-tok.is-fog::after{
-  content: ""; position: absolute; inset: 3px; border-radius: 15%;
+.an-fog span{
+  grid-area: 1 / 1;
+  font-weight: 700; font-size: 22cqi; line-height: 1; color: var(--ink); opacity: 0.68;
+  -webkit-mask-size: 100% 300%; mask-size: 100% 300%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: 0 30%; mask-position: 0 30%;
+  animation: anFogMask 3.6s linear infinite alternate;
+}
+.an-fog .d1{
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 12%, transparent 44%, transparent 56%, #000 88%, #000 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 12%, transparent 44%, transparent 56%, #000 88%, #000 100%);
+}
+.an-fog .d0{
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 12%, #000 44%, #000 56%, transparent 88%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, transparent 12%, #000 44%, #000 56%, transparent 88%, transparent 100%);
+}
+.an-tok[data-b="X"] .an-fog span{ animation-duration: 2.7s; }
+.an-tok[data-b="Z"] .an-fog span{ animation-duration: 3.7s; animation-delay: -1.3s; }
+.an-boxes.still .an-fog span, .an-boxes.still .an-tok.is-fog::before{ animation: none; }
+/* The cloud: soft puffs drifting across the box above the digits, plus a
+   faint haze toward the edges, both clipped to the box. */
+.an-tok.is-fog::before, .an-tok.is-fog::after{
+  content: ""; position: absolute; inset: 3px; border-radius: 15%; pointer-events: none;
+}
+.an-tok.is-fog::before{
   background:
-    radial-gradient(circle at 30% 28%, rgba(255,255,255,0.16), transparent 60%),
-    linear-gradient(180deg, var(--an-fog-edge), transparent 38%, transparent 62%, var(--an-fog-edge));
+    radial-gradient(ellipse 34% 26% at 22% 30%, var(--an-cloud), transparent 70%),
+    radial-gradient(ellipse 30% 24% at 70% 62%, var(--an-cloud), transparent 70%),
+    radial-gradient(ellipse 26% 20% at 46% 86%, var(--an-cloud), transparent 70%),
+    radial-gradient(ellipse 28% 22% at 84% 18%, var(--an-cloud), transparent 70%);
+  background-size: 200% 100%;
+  filter: blur(3px);
+  animation: anCloud 7s linear infinite;
 }
+.an-tok[data-b="X"].is-fog::before{ animation-duration: 5.5s; animation-direction: reverse; }
+.an-tok[data-b="Z"].is-fog::before{ animation-duration: 8.5s; }
+.an-tok.is-fog::after{ background: radial-gradient(circle at 50% 50%, transparent 30%, var(--an-haze) 100%); }
 .an-stampwrap{ z-index: 3; display: flex; justify-content: center; align-items: flex-start; pointer-events: none; }
 .an-stamp{
   transform: translateY(-55%);
@@ -786,7 +819,12 @@ h1{
 }
 .an-lost.pop-in, .an-boxes.flip-in{ animation: popIn .45s cubic-bezier(.3,1.6,.5,1); }
 .an-boxes.flip-in{ animation-name: flipIn; animation-timing-function: ease; }
-@keyframes anReel{ from{ transform: translateY(33%); } to{ transform: translateY(0%); } }
+@keyframes anFogMask{
+  0%, 5%{ -webkit-mask-position: 0 0%; mask-position: 0 0%; }
+  45%, 55%{ -webkit-mask-position: 0 50%; mask-position: 0 50%; }
+  95%, 100%{ -webkit-mask-position: 0 100%; mask-position: 0 100%; }
+}
+@keyframes anCloud{ from{ background-position: 0% 0; } to{ background-position: 200% 0; } }
 @keyframes anStamp{ 0%{ transform: translateY(-160%) scale(1.4); opacity: 0; } 100%{ transform: translateY(-55%); opacity: 1; } }
 @keyframes anHit{ 40%{ border-color: var(--gem); box-shadow: 0 0 34px rgba(var(--gem-rgb),0.9); } }
 @keyframes anMiss{ 35%, 65%{ border-color: #ff2b4a; background: rgba(255,43,74,0.55); box-shadow: 0 0 30px rgba(255,43,74,0.8); } }
@@ -899,9 +937,14 @@ h1{
 }
 @media (max-width: 560px){
   .setup-card{ padding: 28px 20px; }
-  .setup-preview{ --tile: 46px; }
-  .setup-preview .slot{ width: calc(var(--tile) + 22px); }
-  .setup-preview .slot-name{ font-size: 11.5px; }
+  /* The preview's four slots and three beams must fit the card's inner
+     width (about 100vw - 86px here: page, card and preview padding), so
+     tiles shrink with the screen below ~375px: 4 * (tile + 16px) plus
+     three 10px beams fits when tile <= 25vw - 45px. */
+  .setup-preview{ --tile: min(46px, calc(25vw - 46px)); padding: 16px 6px 8px; }
+  .setup-preview .slot{ width: calc(var(--tile) + 16px); }
+  .setup-preview .beam{ flex-basis: 10px; min-width: 10px; }
+  .setup-preview .slot-name{ font-size: 11px; }
   /* Phones: 48px tiles, shrinking further on very narrow screens so that
      4 * (tile + 20px) + 3 * 10px fits the ~100vw - 38px of room. */
   .stage-panel{ --tile: min(48px, calc((100vw - 68px) / 4 - 20px)); --slot: calc(var(--tile) + 20px); --beam: 10px; padding: 14px 6px 10px; }

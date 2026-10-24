@@ -495,29 +495,30 @@ function anStateSVG(key, three){
 
 // Names. plain=true swaps the arrow for a word, for aria-labels.
 function anCardName(an, three, plain){
-  if (an.declare) return 'Declare ' + an.declare[0] + ' = ' + an.declare[1];
+  if (an.declare) return 'Declare ' + an.declare[0] + '\u00a0=\u00a0' + an.declare[1];
   const vis = anBoxes(three);
   const parts = (an.swap || []).filter(pr => pr.every(b => vis.includes(b))).map(pr => 'Swap ' + pr[0] + (plain ? ' and ' : ' ↔ ') + pr[1]);
   const flips = (an.flip || []).filter(b => vis.includes(b));
   if (flips.length) parts.push((parts.length ? 'flip ' : 'Flip ') + flips.join(plain ? ' and ' : ' & '));
   return parts.length ? parts.join(', ') : 'Nothing changes';
 }
-// "Z = 0", or spoken: "Z is 0; X and Y are random".
+// "Z = 0" (non-breaking spaces, so it never wraps mid-value), or spoken:
+// "Z is 0; X and Y are random".
 function anStateText(key, three, spoken){
   const k = stateByKey(key).an;
-  if (!spoken) return k[0] + ' = ' + k[1];
+  if (!spoken) return k[0] + '\u00a0=\u00a0' + k[1];
   const others = anBoxes(three).filter(b => b !== k[0]);
   return k[0] + ' is ' + k[1] + '; ' + others.join(' and ') + (others.length > 1 ? ' are' : ' is') + ' random';
 }
 
 // The big stage boxes. Each box is a fixed colored frame plus a "token"
-// holding its contents (a bit, or the sliding foggy reel). Tokens sit
+// holding its contents (a bit, or a 0 and 1 fading under cloud). Tokens sit
 // exactly over their frames; during a play they move (swap) or spin
 // (flip) on their own, so values visibly travel between boxes. `key` null
 // = the qubit was lost (frames greyed, tokens hidden, an X over them).
 function anTokenHTML(b, bit){
   return bit === null
-    ? '<div class="an-tok an-pos-' + b + ' is-fog" data-b="' + b + '"><span class="an-reel"><span>0</span><span>1</span><span>0</span></span></div>'
+    ? '<div class="an-tok an-pos-' + b + ' is-fog" data-b="' + b + '"><span class="an-fog"><span class="d0">0</span><span class="d1">1</span></span></div>'
     : '<div class="an-tok an-pos-' + b + ' is-known" data-b="' + b + '"><span class="an-val">' + bit + '</span></div>';
 }
 function anBoxesHTML(key, three, extra){
@@ -1067,12 +1068,9 @@ function renderGame(opts){
 // Syncs the header controls: style toggle, theme switch, mute button.
 function renderHeader(){
   setPillGroup($('domain-toggle'), settings.domain);
-  // Only the styles this run can switch to are enabled (see setDomain).
+  // Only the styles this run can switch to are shown (see runDomains).
   $('domain-toggle').querySelectorAll('.pill').forEach(p => {
-    const locked = !runDomains(game).includes(p.dataset.value);
-    p.disabled = locked;
-    p.title = locked ? (game.analogy ? 'Not available in a quest started in Analogy. Choose it from the main menu.'
-                                     : 'Analogy is chosen from the main menu, before a quest starts.') : '';
+    p.hidden = !runDomains(game).includes(p.dataset.value);
   });
   const th = $('theme-toggle-header');
   th.classList.toggle('active', settings.theme === 'dark');
