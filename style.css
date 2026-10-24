@@ -16,6 +16,9 @@
                   measurements, pale blue for transformations, pale pink
                   for quarter-wave plates, near-white for identity, amber
                   for maple syrup.
+     --an-x/y/z   Analogy style's three boxes: X red, Y green, Z blue
+                  (*-deep variants carry white text and sit on the pale
+                  gate tiles).
 
    The one loud element is the stage: a glowing cyan beam carrying the
    qubit through each object, with the streak counter above it.
@@ -58,6 +61,13 @@
   --qwp-stroke: #cf8a80;
   --glass-fill: #eef6fb;
   --object-ink: #201d1a;
+
+  /* Analogy boxes. */
+  --an-x: #ef5350; --an-x-rgb: 239,83,80;  --an-x-deep: #b71f1f;
+  --an-y: #3fbf6a; --an-y-rgb: 63,191,106; --an-y-deep: #146b34;
+  --an-z: #5b97f8; --an-z-rgb: 91,151,248; --an-z-deep: #1f5fbf;
+  --an-fog-edge: rgba(18,22,31,0.8);
+  --an-blank: #6d7586;
 
   /* Surfaces that differ by theme */
   --page-glow-a: rgba(150,23,46,0.14);
@@ -108,6 +118,11 @@
   --meas-fill: #4c4c50;
   --meas-stroke: #2b2b2e;
   --glass-fill: #f4f9fc;
+
+  --an-x: #c93734; --an-x-rgb: 201,55,52;
+  --an-y: #1b7c41; --an-y-rgb: 27,124,65;
+  --an-z: #2a63c4; --an-z-rgb: 42,99,196;
+  --an-fog-edge: rgba(255,255,255,0.75);
 
   --page-glow-a: rgba(156,28,51,0.05);
   --page-glow-b: rgba(47,111,176,0.06);
@@ -671,6 +686,110 @@ h1{
 .tile.pop-in{ animation: popIn .45s cubic-bezier(.3,1.6,.5,1); }
 .tile.flip-in{ animation: flipIn .45s ease; }
 
+/* ---- Analogy style ---- */
+/* Box colours: one class sets the variables, every piece reads them. */
+.an-col-X{ --c: var(--an-x); --c-rgb: var(--an-x-rgb); --c-deep: var(--an-x-deep); }
+.an-col-Y{ --c: var(--an-y); --c-rgb: var(--an-y-rgb); --c-deep: var(--an-y-deep); }
+.an-col-Z{ --c: var(--an-z); --c-rgb: var(--an-z-rgb); --c-deep: var(--an-z-deep); }
+
+/* SVG pieces (card faces and small state tiles; see anCardSVG). */
+.an-blank{ fill: none; stroke: var(--an-blank); stroke-width: 1; stroke-dasharray: 2.2 2; }
+.an-blank.on-dark{ stroke: #b4bac7; }
+.an-tint{ fill: rgba(var(--c-rgb),0.22); stroke: var(--c-deep); stroke-width: 1.4; }
+.an-solid{ fill: var(--c-deep); }
+.an-letter, .an-dtext, .an-bit, .an-fogbits text{
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  text-anchor: middle; dominant-baseline: central;
+}
+.an-letter{ font-size: 9px; fill: var(--c-deep); }
+.an-dtext{ font-size: 8px; fill: #ffffff; }
+.an-bit{ font-size: 13px; fill: #ffffff; }
+.an-fogbits text{ font-size: 7px; fill: var(--ink); opacity: 0.7; }
+.an-ring{ fill: none; stroke: var(--object-ink); stroke-width: 1.3; }
+.an-swap{ stroke: var(--object-ink); stroke-width: 1.6; }
+
+/* The big stage: [object] -> [boxes] -> [next], centered, not a track. */
+.stage-panel{ --an-w: min(calc(var(--tile) * 1.72), calc(100vw - 2 * var(--slot) - 2 * var(--beam) - 72px)); }
+.stage.stage-an{ width: auto; overflow: visible; }
+.an-row{ display: flex; align-items: center; justify-content: center; }
+.an-center{ display: flex; flex-direction: column; align-items: center; width: var(--an-w); flex-shrink: 0; }
+.an-boxes{ position: relative; width: 100%; container-type: inline-size; }
+.an-boxes.an-three{ aspect-ratio: 1 / 0.9; }
+.an-boxes.an-two{ aspect-ratio: 1 / 0.46; }
+.an-box, .an-tok, .an-stampwrap{ position: absolute; aspect-ratio: 1; border-radius: 17%; }
+.an-three .an-box, .an-three .an-tok, .an-three .an-stampwrap{ width: 40%; }
+.an-three .an-pos-Y{ left: 30%; top: 0; }
+.an-three .an-pos-X{ left: 2%; top: 55.6%; }
+.an-three .an-pos-Z{ left: 58%; top: 55.6%; }
+.an-two .an-box, .an-two .an-tok, .an-two .an-stampwrap{ width: 44%; top: 0; }
+.an-two .an-pos-X{ left: 3%; }
+.an-two .an-pos-Z{ left: 53%; }
+.an-box{
+  border: 3px solid var(--c);
+  background: rgba(var(--c-rgb),0.12);
+  transition: background .25s ease, box-shadow .25s ease;
+}
+.an-box.is-known{ background: rgba(var(--c-rgb),0.30); box-shadow: 0 0 24px rgba(var(--c-rgb),0.55); }
+.an-lab{
+  position: absolute; z-index: 2; top: 4%; left: 9%;
+  font-weight: 700; font-size: 8cqi; line-height: 1; color: var(--c);
+}
+.an-tok{
+  z-index: 1; overflow: hidden; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .3s cubic-bezier(.45,0,.3,1);
+}
+.an-val{ font-weight: 700; font-size: 22cqi; line-height: 1; color: var(--ink); }
+/* A random box: a blurred reel of 0/1/0 sliding up and down under fog,
+   each box on its own period so they never move in step. At rest (motion
+   off) it sits halfway, showing half a 0 over half a 1. */
+.an-reel{
+  display: flex; flex-direction: column; align-items: center;
+  filter: blur(2px);
+  transform: translateY(16.7%);
+  animation: anReel 1.6s ease-in-out infinite alternate;
+}
+.an-reel span{ font-weight: 700; font-size: 18cqi; line-height: 1.1; color: var(--ink); opacity: 0.75; }
+.an-tok[data-b="X"] .an-reel{ animation-duration: 1.3s; }
+.an-tok[data-b="Z"] .an-reel{ animation-duration: 1.9s; animation-delay: -.6s; }
+.an-boxes.still .an-reel{ animation: none; }
+.an-tok.is-fog::after{
+  content: ""; position: absolute; inset: 3px; border-radius: 15%;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,0.16), transparent 60%),
+    linear-gradient(180deg, var(--an-fog-edge), transparent 38%, transparent 62%, var(--an-fog-edge));
+}
+.an-stampwrap{ z-index: 3; display: flex; justify-content: center; align-items: flex-start; pointer-events: none; }
+.an-stamp{
+  transform: translateY(-55%);
+  background: var(--c-deep); color: #ffffff;
+  font-weight: 700; font-size: 7.5cqi; line-height: 1;
+  padding: 1.4cqi 3cqi; border-radius: 1.6cqi;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  white-space: nowrap;
+  animation: anStamp .22s cubic-bezier(.3,1.3,.5,1);
+}
+.an-box.an-hit{ animation: anHit .45s ease; }
+.an-box.an-miss{ animation: anMiss .4s ease; }
+.an-tok.an-flipping{ animation: anFlip .3s ease-in-out; }
+.an-tok.an-reveal{ animation: popIn .35s cubic-bezier(.3,1.6,.5,1); }
+.an-tok.an-fogin{ animation: anFogIn .35s ease; }
+.an-boxes.is-lost .an-box{ filter: grayscale(1); opacity: 0.4; }
+.an-lost{
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 34cqi; line-height: 1;
+  color: var(--danger); text-shadow: 0 0 24px rgba(var(--danger-rgb),0.6);
+}
+.an-lost.pop-in, .an-boxes.flip-in{ animation: popIn .45s cubic-bezier(.3,1.6,.5,1); }
+.an-boxes.flip-in{ animation-name: flipIn; animation-timing-function: ease; }
+@keyframes anReel{ from{ transform: translateY(33%); } to{ transform: translateY(0%); } }
+@keyframes anStamp{ 0%{ transform: translateY(-160%) scale(1.4); opacity: 0; } 100%{ transform: translateY(-55%); opacity: 1; } }
+@keyframes anHit{ 40%{ border-color: var(--gem); box-shadow: 0 0 34px rgba(var(--gem-rgb),0.9); } }
+@keyframes anMiss{ 35%, 65%{ border-color: #ff2b4a; background: rgba(255,43,74,0.55); box-shadow: 0 0 30px rgba(255,43,74,0.8); } }
+@keyframes anFlip{ 50%{ transform: scaleY(0); } }
+@keyframes anFogIn{ 0%{ opacity: 0; } 100%{ opacity: 1; } }
+
 /* ---- History strip ---- */
 /* Row of mini tiles under the stage: every object survived this run. */
 .history{
@@ -896,6 +1015,20 @@ h1{
   .header-controls, .pill-group-compact{ gap: 4px; }
   .pill-group-compact .pill{ padding: 4px 6px; font-size: 11px; }
   #menu-btn{ padding: 4px 7px; }
+}
+
+/* Narrow screens: Analogy drops the "next object" placeholder (the hand
+   right below says the same thing) and gives that room to the boxes. */
+@media (max-width: 600px){
+  .stage-an .an-next{ display: none; }
+  .stage-panel{ --an-w: min(250px, calc(100vw - var(--slot) - var(--beam) - 64px)); }
+}
+/* Portrait phones fit everything in one screen height, so the triangle
+   (0.9 times as tall as it is wide) is also capped by the height left over
+   for the stage: roughly the screen minus 450px of header, score, message,
+   hand, captions and history. */
+@media (max-width: 600px) and (orientation: portrait){
+  .an-boxes.an-three{ width: min(100%, calc((100vh - 450px) * 1.1)); width: min(100%, calc((100dvh - 450px) * 1.1)); }
 }
 
 @media (prefers-reduced-motion: reduce){

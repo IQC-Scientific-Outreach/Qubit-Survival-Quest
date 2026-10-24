@@ -53,6 +53,14 @@
     <marker id="qsq-arrow-ink" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">
       <path d="M0,0 L4,2 L0,4 Z" fill="#201d1a"/>
     </marker>
+    <!-- Analogy swap arrows: one marker for both ends of the line. -->
+    <marker id="qsq-arrow-ink-both" markerWidth="3.6" markerHeight="3.6" refX="1.8" refY="1.8" orient="auto-start-reverse">
+      <path d="M0,0 L3.6,1.8 L0,3.6 Z" fill="#201d1a"/>
+    </marker>
+    <!-- Analogy random boxes in small tiles: a blurred 0 over 1. -->
+    <filter id="qsq-fog-blur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0.75"/>
+    </filter>
     <!-- Maple syrup tile: amber fill, and the object square's shape for
          clipping the drips to its rounded corners. -->
     <linearGradient id="qsq-syrup-fill" x1="0" y1="0" x2="0" y2="1">
@@ -90,6 +98,7 @@
           <div class="pill-group" id="setup-domain" role="group" aria-labelledby="setup-domain-label">
             <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
             <button type="button" class="pill" data-value="polarization">Polarization</button>
+            <button type="button" class="pill" data-value="analogy">Analogy</button>
           </div>
           <p class="mode-note mode-note-inline"><span id="domain-note"></span> Switch at any time. </p>
         </div>
@@ -143,15 +152,16 @@
         <summary>How to play</summary>
         <ol>
           <li>Pick one of the three objects in your hand. Click it, or enter <strong>1</strong>, <strong>2</strong> or <strong>3</strong>.</li>
-          <li><strong>Measurements</strong> (projectors and polarizers) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
-          <li><strong>Gates and rotators</strong> always let the qubit through, but can change its state.</li>
+          <li><strong>Measurements</strong> (projectors, polarizers and declarations) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
+          <li><strong>Gates, rotators and box swaps/flips</strong> always let the qubit through, but can change its state.</li>
           <li>Each object the qubit survives adds one to your streak. Try to beat the odds and beat par!</li>
         </ol>
       </details>
 
       <details class="rules-disclosure">
         <summary>Object equivalents</summary>
-        <p>The below objects do exactly the same thing to the qubit depending on if we visualize it as bra-ket or photon polarization. You can switch between the two modes at any time without affecting your streak. Some objects only appear if Complex Numbers are enabled.</p>
+        <p>The below objects do exactly the same thing to the qubit whether we visualize it as bra-ket, photon polarization, or the Analogy's three boxes. You can switch between the three styles at any time without affecting your streak. Some objects only appear if Complex Numbers (Three Box in the Analogy) are enabled.</p>
+        <p>In the Analogy, the qubit is three boxes, one for each way of measuring it: <strong>X</strong> (red), <strong>Y</strong> (green) and <strong>Z</strong> (blue). Only one box is ever known; the other two are random. A <strong>declaration</strong> such as “Z = 1” survives if it's true, fails if it's false, and is a 50/50 on a random box. If it survives, that box becomes the known one. On the cards, a double arrow means two boxes exchange values, a ring of arrows means a box flips (0 ↔ 1), and a dashed box is unaffected.</p>
         <div class="twins-scroll"><table class="twins-table" id="twins-table"></table></div>
       </details>
 
@@ -176,6 +186,7 @@
         <div class="pill-group pill-group-compact" id="domain-toggle" role="group" aria-label="Qubit style">
           <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
           <button type="button" class="pill" data-value="polarization">Polarization</button>
+            <button type="button" class="pill" data-value="analogy">Analogy</button>
         </div>
         <div class="toggle-row theme-row" title="Light / dark theme">
           <span class="theme-icon" aria-hidden="true">☀</span>

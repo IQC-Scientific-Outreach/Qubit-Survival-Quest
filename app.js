@@ -14,15 +14,15 @@
                  wouldn't.
      2. STATES   The six states the game can ever reach (every object
                  maps this set back into itself — verified in testing).
-     3. DECK     Every object is ONE abstract card with two renderings
-                 (Bra-Ket and Polarization). Gameplay only ever touches
+     3. DECK     Every object is ONE abstract card with three renderings
+                 (Bra-Ket, Polarization and Analogy). Gameplay only ever touches
                  the abstract card, which is why the qubit style can be
                  switched mid-game without changing anything about the
                  run: switching only re-renders.
      4. RULES    Drawing, resolving a play, par. Same rules as the
                  Superposition and Measurement Lab's Game mode.
      5. MARKUP   Pure functions turning a state/card into HTML/SVG for
-                 either style (design notes inline).
+                 any style (design notes inline).
      6. UI       Screens, rendering, input, pacing. Only starts in a
                  browser (guarded at the very bottom), so sections 1–4
                  can be loaded headless for simulation/testing.
@@ -107,6 +107,18 @@ function applyQWP(v, deg){
 function applyY(v){
   return { prob: 1, out: { x: cMul(cx(0, -1), v.y), y: cMul(cx(0, 1), v.x) } };
 }
+// The two basis changes. Each exchanges two measurement bases exactly, the
+// way Hadamard exchanges Z and X: Z <-> Y (|0> <-> |+i>, |1> <-> |-i>) or
+// X <-> Y (|+> <-> |+i>, |-> <-> |-i>), and, like Hadamard, flips the third
+// basis (|+> <-> |->, or |0> <-> |1>). On the Poincare sphere that is a
+// half-turn about an axis halfway between the two swapped ones. A single
+// quarter-wave plate can't do it (it turns only a quarter-turn, so one of the
+// two bases comes back flipped), and no single linear wave-plate has an
+// axis off the equator, but a half-wave plate followed by a quarter-wave
+// plate does it exactly. (Swapping two bases WITHOUT flipping the third would
+// be a mirror image of the sphere, which no gate can do.)
+function applySwapZY(v){ return applyQWP(applyHWP(v, 0).out, 45); }
+function applySwapXY(v){ return applyQWP(applyHWP(v, 45).out, 0); }
 // Identity gate / clear glass: always passes, state unchanged.
 function applyIdentity(v){ return { prob: 1, out: v }; }
 
@@ -114,13 +126,16 @@ function applyIdentity(v){ return { prob: 1, out: v }; }
 
 // `pol` describes how the state is DRAWN in Polarization style: a
 // double-headed arrow at `angle`, or a circle with handedness arrows.
+// `an` is the Analogy style's one known box and its bit: each basis's +1
+// eigenstate reads 0 and its -1 eigenstate reads 1 (the other two boxes
+// are random).
 const STATES = [
-  { key: '0',  vec: vecLinear(0),     pol: { name: 'Horizontal',    angle: 0 } },
-  { key: '1',  vec: vecLinear(90),    pol: { name: 'Vertical',      angle: 90 } },
-  { key: '+',  vec: vecLinear(45),    pol: { name: '+45\u00b0 diagonal', angle: 45 } },
-  { key: '-',  vec: vecLinear(-45),   pol: { name: '\u221245\u00b0 diagonal', angle: -45 } },
-  { key: '+i', vec: vecCircular('L'), pol: { name: 'Left circular',  circ: 'L' } },
-  { key: '-i', vec: vecCircular('R'), pol: { name: 'Right circular', circ: 'R' } }
+  { key: '0',  vec: vecLinear(0),     pol: { name: 'Horizontal',    angle: 0 },   an: ['Z', 0] },
+  { key: '1',  vec: vecLinear(90),    pol: { name: 'Vertical',      angle: 90 },  an: ['Z', 1] },
+  { key: '+',  vec: vecLinear(45),    pol: { name: '+45\u00b0 diagonal', angle: 45 },  an: ['X', 0] },
+  { key: '-',  vec: vecLinear(-45),   pol: { name: '\u221245\u00b0 diagonal', angle: -45 }, an: ['X', 1] },
+  { key: '+i', vec: vecCircular('L'), pol: { name: 'Left circular',  circ: 'L' }, an: ['Y', 0] },
+  { key: '-i', vec: vecCircular('R'), pol: { name: 'Right circular', circ: 'R' }, an: ['Y', 1] }
 ];
 
 // Which canonical state a vector is, up to global phase (|<s|v>|^2 = 1).
@@ -136,23 +151,26 @@ function stateByKey(key){ return STATES.find(s => s.key === key); }
 /* ===================== 3. DECK ===================== */
 
 // One entry per object. `cat` drives the rules (projector = measurement
-// that can absorb; unitary = always passes). `bk` and `pol` are the two
-// twin renderings; `complexOnly` objects are removed in Real-only games
+// that can absorb; unitary = always passes). `bk`, `pol` and `an` are the
+// three twin renderings; `complexOnly` objects are removed in Real-only games
 // (they are exactly the ones that reach the |+-i> / circular states).
+// `an` (Analogy style) says what the object does to the X/Y/Z boxes:
+// declare [box, bit], or swap [[a, b]] then flip [boxes]. Testing checks
+// every `an` entry against `apply` on all six states.
 const CARDS = {
-  P0:   { cat: 'projector', apply: v => project(v, vecLinear(0)),     bk: { sym: '0' },  pol: { type: 'polarizer', angle: 0,   name: 'Horizontal Polarizer' } },
-  P1:   { cat: 'projector', apply: v => project(v, vecLinear(90)),    bk: { sym: '1' },  pol: { type: 'polarizer', angle: 90,  name: 'Vertical Polarizer' } },
-  PP:   { cat: 'projector', apply: v => project(v, vecLinear(45)),    bk: { sym: '+' },  pol: { type: 'polarizer', angle: 45,  name: '+45\u00b0 Polarizer' } },
-  PM:   { cat: 'projector', apply: v => project(v, vecLinear(-45)),   bk: { sym: '-' },  pol: { type: 'polarizer', angle: -45, name: '\u221245\u00b0 Polarizer' } },
-  PR:   { cat: 'projector', apply: v => project(v, vecCircular('R')), bk: { sym: '-i' }, pol: { type: 'polarizer', circ: 'R', name: 'Right-Circular Polarizer' }, complexOnly: true },
-  PL:   { cat: 'projector', apply: v => project(v, vecCircular('L')), bk: { sym: '+i' }, pol: { type: 'polarizer', circ: 'L', name: 'Left-Circular Polarizer' },  complexOnly: true },
-  GZ:   { cat: 'unitary', apply: v => applyHWP(v, 0),    bk: { gate: 'Z',   name: 'Pauli-Z Gate' },  pol: { type: 'hwp', angle: 0,    name: 'Half Wave-Plate (0\u00b0)' } },
-  GX:   { cat: 'unitary', apply: v => applyHWP(v, 45),   bk: { gate: 'X',   name: 'Pauli-X Gate' },  pol: { type: 'hwp', angle: 45,   name: 'Half Wave-Plate (45\u00b0)' } },
-  GY:   { cat: 'unitary', apply: applyY,                 bk: { gate: 'Y',   name: 'Pauli-Y Gate' },  pol: { type: 'syrup',            name: 'Maple Syrup (optically active)' } },
-  GH:   { cat: 'unitary', apply: v => applyHWP(v, 22.5), bk: { gate: 'H',   name: 'Hadamard Gate' }, pol: { type: 'hwp', angle: 22.5, name: 'Half Wave-Plate (22.5\u00b0)' } },
-  GUZY: { cat: 'unitary', apply: v => applyQWP(v, 45),   bk: { gate: 'UZY', name: 'Basis Change (Z\u2194Y)' }, pol: { type: 'qwp', angle: 45, name: 'Quarter Wave-Plate (45\u00b0)' }, complexOnly: true },
-  GUXY: { cat: 'unitary', apply: v => applyQWP(v, 0),    bk: { gate: 'UXY', name: 'Basis Change (X\u2194Y)' }, pol: { type: 'qwp', angle: 0,  name: 'Quarter Wave-Plate (0\u00b0)' },  complexOnly: true },
-  GI:   { cat: 'unitary', apply: applyIdentity,          bk: { gate: 'I',   name: 'Identity Gate' }, pol: { type: 'glass',            name: 'Clear Glass' } }
+  P0:   { cat: 'projector', apply: v => project(v, vecLinear(0)),     bk: { sym: '0' },  pol: { type: 'polarizer', angle: 0,   name: 'Horizontal Polarizer' }, an: { declare: ['Z', 0] } },
+  P1:   { cat: 'projector', apply: v => project(v, vecLinear(90)),    bk: { sym: '1' },  pol: { type: 'polarizer', angle: 90,  name: 'Vertical Polarizer' },   an: { declare: ['Z', 1] } },
+  PP:   { cat: 'projector', apply: v => project(v, vecLinear(45)),    bk: { sym: '+' },  pol: { type: 'polarizer', angle: 45,  name: '+45\u00b0 Polarizer' },  an: { declare: ['X', 0] } },
+  PM:   { cat: 'projector', apply: v => project(v, vecLinear(-45)),   bk: { sym: '-' },  pol: { type: 'polarizer', angle: -45, name: '\u221245\u00b0 Polarizer' }, an: { declare: ['X', 1] } },
+  PR:   { cat: 'projector', apply: v => project(v, vecCircular('R')), bk: { sym: '-i' }, pol: { type: 'polarizer', circ: 'R', name: 'Right-Circular Polarizer' }, an: { declare: ['Y', 1] }, complexOnly: true },
+  PL:   { cat: 'projector', apply: v => project(v, vecCircular('L')), bk: { sym: '+i' }, pol: { type: 'polarizer', circ: 'L', name: 'Left-Circular Polarizer' },  an: { declare: ['Y', 0] }, complexOnly: true },
+  GZ:   { cat: 'unitary', apply: v => applyHWP(v, 0),    bk: { gate: 'Z',   name: 'Pauli-Z Gate' },  pol: { type: 'hwp', angle: 0,    name: 'Half Wave-Plate (0\u00b0)' },   an: { flip: ['X', 'Y'] } },
+  GX:   { cat: 'unitary', apply: v => applyHWP(v, 45),   bk: { gate: 'X',   name: 'Pauli-X Gate' },  pol: { type: 'hwp', angle: 45,   name: 'Half Wave-Plate (45\u00b0)' },  an: { flip: ['Z', 'Y'] } },
+  GY:   { cat: 'unitary', apply: applyY,                 bk: { gate: 'Y',   name: 'Pauli-Y Gate' },  pol: { type: 'syrup',            name: 'Maple Syrup (optically active)' }, an: { flip: ['Z', 'X'] } },
+  GH:   { cat: 'unitary', apply: v => applyHWP(v, 22.5), bk: { gate: 'H',   name: 'Hadamard Gate' }, pol: { type: 'hwp', angle: 22.5, name: 'Half Wave-Plate (22.5\u00b0)' }, an: { swap: [['X', 'Z']], flip: ['Y'] } },
+  GUZY: { cat: 'unitary', apply: applySwapZY, bk: { gate: 'UZY', name: 'Basis Change (Z\u2194Y)' }, pol: { type: 'stack', hwp: 0,  qwp: 45, name: 'Half + Quarter Wave-Plates (0\u00b0, 45\u00b0)' }, an: { swap: [['Z', 'Y']], flip: ['X'] }, complexOnly: true },
+  GUXY: { cat: 'unitary', apply: applySwapXY, bk: { gate: 'UXY', name: 'Basis Change (X\u2194Y)' }, pol: { type: 'stack', hwp: 45, qwp: 0,  name: 'Half + Quarter Wave-Plates (45\u00b0, 0\u00b0)' }, an: { swap: [['X', 'Y']], flip: ['Z'] }, complexOnly: true },
+  GI:   { cat: 'unitary', apply: applyIdentity,          bk: { gate: 'I',   name: 'Identity Gate' }, pol: { type: 'glass',            name: 'Clear Glass' },                  an: {} }
 };
 const CARD_ORDER = ['P0', 'P1', 'PP', 'PM', 'PL', 'PR', 'GZ', 'GX', 'GY', 'GH', 'GUZY', 'GUXY', 'GI'];
 
@@ -204,8 +222,10 @@ function resolvePlay(v, id, rng){
 
 // Par = mean streak (rounded) for a careful player who always plays a
 // guaranteed-safe object when holding one, else a 50/50 object — from a
-// 500,000-game Monte Carlo per setting. Both qubit styles share one deck,
-// so they share par. (Matches the lab's Bra-Ket par values.)
+// 300,000-game Monte Carlo per setting (means 6.85 Real-only, 5.46
+// Complex; re-run after the basis changes became exact swaps, which nudged
+// Complex up from 5.36 without changing par). All qubit styles share one
+// deck, so they share par. (Matches the lab's Bra-Ket par values.)
 const PAR = { real: 7, complex: 5 };
 
 /* ===================== 5. MARKUP ===================== */
@@ -224,7 +244,8 @@ const PAR = { real: 7, complex: 5 };
      (clear glass). Polarization objects are drawn as SVG (viewBox
      -36..36, a 56-unit rounded square that ROTATES with the object's
      angle, exactly like the lab); Bra-Ket objects are HTML text on an
-     inset rounded square of the same proportions.
+     inset rounded square of the same proportions. Analogy objects are
+     SVG on the same square, never rotated (see the Analogy notes below).
    - Arrowheads come from the hidden <marker> library at the top of
      index.html (ids qsq-arrow-*), shared by every SVG on the page. */
 
@@ -287,6 +308,13 @@ function polCardSVG(pol){
     return svgWrap('<g transform="rotate(' + (-pol.angle) + ')">' + SQUARE(pol.type === 'qwp' ? 'sq-qwp' : 'sq-hwp') +
       '<line class="wp-slow" x1="0" y1="-24" x2="0" y2="24"/><line class="wp-fast" x1="-24" y1="0" x2="24" y2="0"/></g>');
   }
+  if (pol.type === 'stack'){
+    // Two plates in a row (half-wave behind, quarter-wave in front), each
+    // drawn smaller and turned to its own fast-axis angle.
+    const plate = (dx, angle, cls) => '<g transform="translate(' + dx + ',' + dx + ') scale(0.68) rotate(' + (-angle) + ')">' + SQUARE(cls) +
+      '<line class="wp-slow" x1="0" y1="-24" x2="0" y2="24"/><line class="wp-fast" x1="-24" y1="0" x2="24" y2="0"/></g>';
+    return svgWrap(plate(-8, pol.hwp, 'sq-hwp') + plate(8, pol.qwp, 'sq-qwp'));
+  }
   if (pol.type === 'syrup'){
     // Maple syrup: an amber square with syrup dripping from its top edge
     // (drips clipped to the square's rounded shape via #qsq-square-clip),
@@ -329,9 +357,10 @@ function bkCardInner(bk){
 
 // Display name of an object in the given style. plain=true returns text only
 // (for aria-labels); otherwise projector names include a rendered ket.
-function cardName(id, domain, plain){
+function cardName(id, domain, plain, three){
   const c = CARDS[id];
   if (domain === 'polarization') return c.pol.name;
+  if (domain === 'analogy') return anCardName(c.an, anThree(three), plain);
   if (c.cat === 'projector') return 'Projector onto ' + (plain ? KET_SPOKEN[c.bk.sym] : ketHTML(c.bk.sym));
   return c.bk.name;
 }
@@ -348,33 +377,152 @@ function basisHTML(key){
 }
 // Spoken name of a state, for announcements.
 function stateSpoken(key, domain){
+  if (domain === 'analogy') return anStateText(key, anThree(), true);
   return domain === 'polarization' ? stateByKey(key).pol.name.toLowerCase() + ' polarization' : KET_SPOKEN[key];
 }
 function stateName(key, domain){
+  if (domain === 'analogy') return anStateText(key, anThree());
   return domain === 'polarization' ? stateByKey(key).pol.name : basisHTML(key);
 }
 
 // Whole tiles. `extra` adds modifier classes (e.g. "dull" for the prior state).
-function cardTileHTML(id, domain, extra){
+// `three` (Analogy only) overrides the Two/Three Box setting; see anThree().
+function cardTileHTML(id, domain, extra, three){
   const c = CARDS[id];
-  const label = cardName(id, domain, true);
+  const label = cardName(id, domain, true, three);
   let face;
   if (domain === 'polarization'){
     face = '<div class="face">' + polCardSVG(c.pol) + '</div>';
+  } else if (domain === 'analogy'){
+    face = '<div class="face">' + anCardSVG(c.an, anThree(three)) + '</div>';
   } else {
     face = '<div class="face face-bk ' + (c.cat === 'projector' ? 'face-meas' : (c.bk.gate === 'I' ? 'face-glass' : 'face-gate')) + '">' + bkCardInner(c.bk) + '</div>';
   }
   return '<div class="tile tile-object ' + (extra || '') + '" role="img" aria-label="' + label + '">' + face + '</div>';
 }
-// A whole STATE tile (the glowing qubit box) for either style. `extra` adds
+// A whole STATE tile (the glowing qubit box) for any style. `extra` adds
 // modifier classes: 'dull' (prior state), 'pop-in', 'mini' (history strip).
 function stateTileHTML(key, domain, extra){
   const s = stateByKey(key);
-  const face = domain === 'polarization'
-    ? '<div class="face">' + polStateSVG(s.pol) + '</div>'
+  const face = domain === 'polarization' ? '<div class="face">' + polStateSVG(s.pol) + '</div>'
+    : domain === 'analogy' ? '<div class="face">' + anStateSVG(key, anThree()) + '</div>'
     : '<div class="face face-ket">' + ketHTML(key) + '</div>';
-  const label = domain === 'polarization' ? s.pol.name + ' polarization' : KET_SPOKEN[key];
+  const label = stateSpoken(key, domain);
   return '<div class="tile tile-state ' + (extra || '') + '" role="img" aria-label="' + label + '">' + face + '</div>';
+}
+
+/* ---- Analogy style ----
+   The qubit is three boxes, one per measurement basis: X (red), Y (green),
+   Z (blue). Exactly one box is known (0 or 1); the other two are random.
+   Real-only games ("Two Box") never reach the Y basis, so Y is hidden
+   everywhere: on cards, the stage and in names.
+   Card faces use one fixed layout: Y on top, X bottom-left, Z bottom-right
+   (or just X and Z side by side), so each pair of boxes shares an edge. A
+   double arrow on an edge = the two boxes exchange values; a ring of arrows
+   around a box = its value flips; a dashed outline = unaffected. When a
+   card does both, swaps happen first, then flips (no card ever swaps and
+   flips the same box). The big stage boxes are HTML (see anBoxesHTML), so
+   they can animate. */
+const AN_POS = {
+  3: { Y: [0, -15], X: [-16, 12], Z: [16, 12] },
+  2: { X: [-14, 0], Z: [14, 0] }
+};
+// Which boxes a game shows: all three, or X and Z for Two Box games.
+// `three` is explicit for pictures that ignore the setting (the equivalents
+// table always shows all three); otherwise it follows the Numbers setting.
+function anThree(three){ return three !== undefined ? three : settings.complex; }
+function anBoxes(three){ return three ? ['X', 'Y', 'Z'] : ['X', 'Z']; }
+
+// One card-face box: `mode` is 'blank' (dashed: unaffected), 'on' (touched
+// by the gate), or 'declare' (a bigger filled box reading e.g. "Z=1").
+function anBoxSVG(b, p, s, mode, bit){
+  const x = p[0] - s/2, y = p[1] - s/2;
+  const rect = (cls) => '<rect class="' + cls + '" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" rx="' + (s * 0.24).toFixed(1) + '"/>';
+  if (mode === 'blank') return rect('an-blank');
+  if (mode === 'blank-dark') return rect('an-blank on-dark');
+  if (mode === 'declare') return rect('an-solid an-col-' + b) + '<text class="an-dtext" x="' + p[0] + '" y="' + (p[1] + 0.5) + '">' + b + '=' + bit + '</text>';
+  return rect('an-tint an-col-' + b) + '<text class="an-letter an-ink-' + b + '" x="' + p[0] + '" y="' + (p[1] + 0.5) + '">' + b + '</text>';
+}
+// Flip: two arcs of arrows circling the box.
+function anRingSVG(p, r){
+  return [[30, 150], [210, 330]].map(([a, b]) => {
+    const pt = (deg) => (p[0] + r * Math.cos(toRad(deg))).toFixed(2) + ',' + (p[1] - r * Math.sin(toRad(deg))).toFixed(2);
+    return '<path class="an-ring" d="M' + pt(a) + ' A' + r + ' ' + r + ' 0 0 0 ' + pt(b) + '" marker-end="url(#qsq-arrow-ink)"/>';
+  }).join('');
+}
+// Swap: a double-headed arrow along the edge between two boxes, starting
+// just outside each box's square.
+function anSwapSVG(p, q, s){
+  const dx = q[0] - p[0], dy = q[1] - p[1], len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+  const o = (s / 2) / Math.max(Math.abs(ux), Math.abs(uy)) + 2.6;
+  return '<line class="an-swap" x1="' + (p[0] + ux*o).toFixed(2) + '" y1="' + (p[1] + uy*o).toFixed(2) + '" x2="' + (q[0] - ux*o).toFixed(2) + '" y2="' + (q[1] - uy*o).toFixed(2) +
+    '" marker-start="url(#qsq-arrow-ink-both)" marker-end="url(#qsq-arrow-ink-both)"/>';
+}
+// SVG face for an Analogy-style object. Declarations are dark (measurement)
+// squares, gates pale blue, the identity near-white: the lab's colors again.
+function anCardSVG(an, three){
+  const n = three ? 3 : 2, pos = AN_POS[n], s = n === 3 ? 13 : 15, vis = anBoxes(three);
+  const swaps = (an.swap || []).filter(pr => pr.every(b => vis.includes(b)));
+  const flips = (an.flip || []).filter(b => vis.includes(b));
+  const touched = swaps.flat().concat(flips);
+  let inner = SQUARE(an.declare ? 'sq-meas' : (touched.length ? 'sq-hwp' : 'sq-glass'));
+  vis.forEach(b => {
+    if (an.declare) inner += b === an.declare[0] ? anBoxSVG(b, pos[b], n === 3 ? 19 : 22, 'declare', an.declare[1]) : anBoxSVG(b, pos[b], s, 'blank-dark');
+    else inner += anBoxSVG(b, pos[b], s, touched.includes(b) ? 'on' : 'blank');
+  });
+  swaps.forEach(([a, b]) => { inner += anSwapSVG(pos[a], pos[b], s); });
+  flips.forEach(b => { inner += anRingSVG(pos[b], s * 0.78); });
+  return svgWrap(inner);
+}
+// SVG picture of a STATE for small tiles (history, preview): the known box
+// filled with its bit, the random ones faint with a blurred 0 over 1.
+function anStateSVG(key, three){
+  const n = three ? 3 : 2, s = n === 3 ? 17 : 20, known = stateByKey(key).an;
+  const pos = n === 3 ? { Y: [0, -13], X: [-14, 11], Z: [14, 11] } : { X: [-12, 0], Z: [12, 0] };
+  return svgWrap(anBoxes(three).map(b => {
+    const p = pos[b], x = p[0] - s/2, y = p[1] - s/2;
+    const rect = (cls) => '<rect class="' + cls + '" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" rx="' + (s * 0.24).toFixed(1) + '"/>';
+    if (b === known[0]) return rect('an-solid an-col-' + b) + '<text class="an-bit" x="' + p[0] + '" y="' + (p[1] + 0.8) + '">' + known[1] + '</text>';
+    return rect('an-tint an-col-' + b) + '<g class="an-fogbits" filter="url(#qsq-fog-blur)"><text x="' + p[0] + '" y="' + (p[1] - 3.6) + '">0</text><text x="' + p[0] + '" y="' + (p[1] + 4.6) + '">1</text></g>';
+  }).join(''), 32);
+}
+
+// Names. plain=true swaps the arrow for a word, for aria-labels.
+function anCardName(an, three, plain){
+  if (an.declare) return 'Declare ' + an.declare[0] + ' = ' + an.declare[1];
+  const vis = anBoxes(three);
+  const parts = (an.swap || []).filter(pr => pr.every(b => vis.includes(b))).map(pr => 'Swap ' + pr[0] + (plain ? ' and ' : ' ↔ ') + pr[1]);
+  const flips = (an.flip || []).filter(b => vis.includes(b));
+  if (flips.length) parts.push((parts.length ? 'flip ' : 'Flip ') + flips.join(plain ? ' and ' : ' & '));
+  return parts.length ? parts.join(', ') : 'Nothing changes';
+}
+// "Z = 0", or spoken: "Z is 0; X and Y are random".
+function anStateText(key, three, spoken){
+  const k = stateByKey(key).an;
+  if (!spoken) return k[0] + ' = ' + k[1];
+  const others = anBoxes(three).filter(b => b !== k[0]);
+  return k[0] + ' is ' + k[1] + '; ' + others.join(' and ') + (others.length > 1 ? ' are' : ' is') + ' random';
+}
+
+// The big stage boxes. Each box is a fixed colored frame plus a "token"
+// holding its contents (a bit, or the sliding foggy reel). Tokens sit
+// exactly over their frames; during a play they move (swap) or spin
+// (flip) on their own, so values visibly travel between boxes. `key` null
+// = the qubit was lost (frames greyed, tokens hidden, an X over them).
+function anTokenHTML(b, bit){
+  return bit === null
+    ? '<div class="an-tok an-pos-' + b + ' is-fog" data-b="' + b + '"><span class="an-reel"><span>0</span><span>1</span><span>0</span></span></div>'
+    : '<div class="an-tok an-pos-' + b + ' is-known" data-b="' + b + '"><span class="an-val">' + bit + '</span></div>';
+}
+function anBoxesHTML(key, three, extra){
+  const known = key === null ? null : stateByKey(key).an;
+  const vis = anBoxes(three);
+  const label = key === null ? 'Lost' : anStateText(key, three, true);
+  return '<div class="an-boxes ' + (three ? 'an-three' : 'an-two') + (key === null ? ' is-lost' : '') + ' ' + (extra || '') + '" role="img" aria-label="' + label + '">' +
+    vis.map(b => '<div class="an-box an-pos-' + b + ' an-col-' + b + (known && known[0] === b ? ' is-known' : '') + '" data-b="' + b + '"><span class="an-lab" aria-hidden="true">' + b + '</span></div>').join('') +
+    (key === null ? '' : vis.map(b => anTokenHTML(b, known[0] === b ? known[1] : null)).join('')) +
+    (key === null ? '<div class="an-lost" aria-hidden="true">✕</div>' : '') +
+    '</div>';
 }
 
 /* ===================== 6. UI ===================== */
@@ -396,12 +544,28 @@ const TEXT = {
     orthogonal: 'The polarizer was orthogonal to the state',
     rotated: 'Polarization state rotated!',
     priorCap: 'Prior photon state', currentCap: 'Current photon state', lostLabel: 'Absorbed'
+  },
+  analogy: {
+    neutral: 'Play an object from your hand and try to help the qubit survive.',
+    lost: 'Qubit Lost!',
+    unlucky: 'That box was random and came up the other way',
+    orthogonal: 'That declaration was false',
+    rotated: 'Boxes changed!',
+    priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost'
   }
 };
 const HINT = 'Play another object to increase your streak';
 const DOMAIN_NOTES = {
   braket: 'Play with Dirac bra-ket notation for gates and states.',
-  polarization: 'Play with polarization states and rotators.'
+  polarization: 'Play with polarization states and rotators.',
+  analogy: 'Play with three boxes: one known bit, and two that are random until you check.'
+};
+const DOMAINS = ['braket', 'polarization', 'analogy'];
+// The Numbers setting's labels. Analogy calls Real-only / Complex "Two Box"
+// / "Three Box", since that is all the setting changes there.
+const NUMBERS_LABELS = {
+  standard: { field: 'Numbers', real: 'Real-Only', complex: 'Complex' },
+  analogy: { field: 'Boxes', real: 'Two Box', complex: 'Three Box' }
 };
 
 // Pacing of the play animation (ms). A survived play takes about half a
@@ -437,6 +601,10 @@ function numbersNote(){
   const par = PAR[modeKey()];
   // Returns HTML: kets are drawn with ketHTML() so |+i> shows its i as a
   // subscript, matching the kets everywhere else in the game.
+  if (settings.domain === 'analogy'){
+    return settings.complex ? 'Includes the green Y box, its declarations, and the swaps that reach it.'
+                            : 'Only the red X and blue Z boxes appear.';
+  }
   if (settings.complex){
     return (settings.domain === 'polarization'
       ? 'Includes circular polarization and quarter-wave plates'
@@ -461,13 +629,14 @@ function renderPreview(){
 }
 
 // Builds the welcome screen's "Object twins" table straight from CARDS, so
-// it always matches the actual deck: one row per object, both renderings.
+// it always matches the actual deck: one row per object, all three
+// renderings (Analogy always with all three boxes).
 function renderTwinsTable(){
+  const cell = (id, d) => '<td><div class="twin-cell">' + cardTileHTML(id, d, '', true) + '<span>' + cardName(id, d, false, true) + '</span></div></td>';
   const rows = CARD_ORDER.map(id =>
-    '<tr><td><div class="twin-cell">' + cardTileHTML(id, 'braket') + '<span>' + cardName(id, 'braket') + '</span></div></td>' +
-    '<td><div class="twin-cell">' + cardTileHTML(id, 'polarization') + '<span>' + cardName(id, 'polarization') + '</span></div></td>' +
-    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex only' : '') + '</td></tr>').join('');
-  $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th></th></tr></thead><tbody>' + rows + '</tbody>';
+    '<tr>' + cell(id, 'braket') + cell(id, 'polarization') + cell(id, 'analogy') +
+    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + '</td></tr>').join('');
+  $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th></th></tr></thead><tbody>' + rows + '</tbody>';
 }
 
 // Syncs every welcome-screen control and note with `settings`. Called after
@@ -482,6 +651,9 @@ function renderSetup(){
     sw.setAttribute('aria-checked', String(on));
   });
   $('domain-note').textContent = DOMAIN_NOTES[settings.domain];
+  const nl = NUMBERS_LABELS[settings.domain === 'analogy' ? 'analogy' : 'standard'];
+  $('setup-numbers-label').textContent = nl.field;
+  $('setup-numbers').querySelectorAll('.pill').forEach(p => { p.textContent = nl[p.dataset.value]; });
   $('numbers-note').innerHTML = numbersNote();
   renderPreview();
 }
@@ -556,7 +728,8 @@ function playCard(idx){
                  newMilestones: hits, lostFx: !result.survives });
     return;
   }
-  animatePlay(idx, id, before, result);
+  if (settings.domain === 'analogy') animatePlayAnalogy(idx, id, before, result);
+  else animatePlay(idx, id, before, result);
 }
 
 // Applies a resolved play to the game state (no rendering). Returns any
@@ -621,11 +794,7 @@ function animatePlay(idx, id, before, result){
   const g = game, d = settings.domain, t = TEXT[d];
   g.busy = true;
   const alive = () => game === g; // stop quietly if the player left for the menu
-
-  $('hand').querySelectorAll('.hand-card').forEach((c, i) => {
-    c.disabled = true;
-    if (i === idx) c.classList.add('played');
-  });
+  lockHand(idx);
 
   const beforeKey = stateKeyOf(before);
   const outKey = result.survives ? stateKeyOf(result.out) : null;
@@ -717,6 +886,100 @@ function animatePlay(idx, id, before, result){
   }, TIMING.depart);
 }
 
+// Disables the hand for the length of a play animation, and sends the
+// played card up out of the hand.
+function lockHand(idx){
+  $('hand').querySelectorAll('.hand-card').forEach((c, i) => {
+    c.disabled = true;
+    if (i === idx) c.classList.add('played');
+  });
+}
+
+/* ---------- The Analogy play animation ----------
+   Analogy's stage is not a sliding track but one big set of boxes that
+   changes in place: [object] -> [boxes] -> [next]. A play:
+     1. The new object drops into the object slot.
+     2. Gate: the contents of swapped boxes slide along their shared edge
+        into each other's box, while flipped boxes spin over and change
+        bit. Random boxes travel and spin too, still foggy.
+        Declaration: a "Z = 1" stamp lands on its box. A known box that
+        matches pulses gold; one that doesn't flashes red. A random box
+        stops sliding and shows what it came up as: on a win, that box
+        becomes the known one and the previously known box fogs over.
+     3. On a loss, the stage shakes and the boxes grey out under an X.
+   Tokens end exactly where the resting stage draws them, so the final
+   renderStage() swaps in with no visible jump. Same total time as the
+   beam animation (TIMING). */
+function animatePlayAnalogy(idx, id, before, result){
+  const g = game, an = CARDS[id].an, three = anThree();
+  g.busy = true;
+  const alive = () => game === g;
+  lockHand(idx);
+
+  const beforeKey = stateKeyOf(before);
+  const stage = $('stage');
+  stage.className = 'stage stage-an';
+  stage.innerHTML = anStageHTML(id, 'arriving', beforeKey, false, 'lit');
+  const boxes = stage.querySelector('.an-boxes');
+  const frame = (b) => boxes.querySelector('.an-box[data-b="' + b + '"]');
+  const token = (b) => boxes.querySelector('.an-tok[data-b="' + b + '"]');
+  const known = stateByKey(beforeKey).an;
+  const hits = commitPlay(idx, id, before, result);
+
+  setTimeout(() => {
+    if (!alive()) return;
+    if (an.declare){
+      const [b, bit] = an.declare;
+      boxes.insertAdjacentHTML('beforeend', '<div class="an-stampwrap an-pos-' + b + '"><span class="an-stamp an-col-' + b + '">' + b + ' = ' + bit + '</span></div>');
+    }
+    setTimeout(() => {
+      if (!alive()) return;
+      renderMessage({ msgAnim: true });
+      outcomeSound(result);
+      const vis = anBoxes(three);
+      if (CARDS[id].cat === 'unitary'){
+        (an.swap || []).filter(pr => pr.every(b => vis.includes(b))).forEach(([a, b]) => {
+          const ra = frame(a).getBoundingClientRect(), rb = frame(b).getBoundingClientRect();
+          const dx = rb.left - ra.left, dy = rb.top - ra.top;
+          token(a).style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+          token(b).style.transform = 'translate(' + (-dx) + 'px,' + (-dy) + 'px)';
+        });
+        (an.flip || []).filter(b => vis.includes(b)).forEach(b => {
+          const tk = token(b);
+          tk.classList.add('an-flipping');
+          const val = tk.querySelector('.an-val');
+          if (val) setTimeout(() => { val.textContent = String(1 - Number(val.textContent)); }, TIMING.shift / 2);
+        });
+        setTimeout(() => { if (alive()) finishAnimatedPlay(idx, hits, true); }, TIMING.shift + 120);
+        return;
+      }
+      // A declaration.
+      const [b, bit] = an.declare;
+      const cls = classify(result.prob);
+      if (cls === 'random'){
+        const shown = result.survives ? bit : 1 - bit;
+        const tk = token(b);
+        tk.className = 'an-tok an-pos-' + b + ' is-known an-reveal';
+        tk.innerHTML = '<span class="an-val">' + shown + '</span>';
+        if (result.survives){
+          frame(known[0]).classList.remove('is-known');
+          frame(b).classList.add('is-known');
+          const old = token(known[0]);
+          old.outerHTML = anTokenHTML(known[0], null).replace('is-fog', 'is-fog an-fogin');
+        }
+      }
+      if (result.survives){
+        frame(b).classList.add('an-hit');
+        setTimeout(() => { if (alive()) finishAnimatedPlay(idx, hits, true); }, TIMING.shift + 120);
+      } else {
+        frame(b).classList.add('an-miss');
+        stage.querySelector('.an-object .tile').classList.add('flash-red');
+        setTimeout(() => { if (alive()) finishAnimatedPlay(idx, hits, false, { lostFx: true }); }, TIMING.flash + 160);
+      }
+    }, TIMING.travel);
+  }, TIMING.depart);
+}
+
 // Slides the track left and calls `done` once the slide has actually
 // finished (transitionend), so the swap to the resting stage never catches
 // it a few pixels short. A timer backs this up in case the event never
@@ -735,19 +998,20 @@ function slideTrack(track, distance, done){
 // Last step of an animated play: release the input lock and swap the slid
 // six-slot track for the normal four-slot stage (pixel-identical, so no
 // jump), then update everything that waited for the animation.
-function finishAnimatedPlay(idx, hits, survived){
+function finishAnimatedPlay(idx, hits, survived, stageOpts){
   game.busy = false;
-  renderStage({});           // seamless: same picture as the slid track
+  renderStage(stageOpts || {}); // seamless: same picture as the slid track
   renderHistory();
   renderScore({ pop: survived, newMilestones: hits });
   renderHand({ dealtIdx: survived ? idx : undefined });
   milestoneSound(hits);
 }
 
-// Switches the qubit style (Bra-Ket <-> Polarization). The run itself is
-// untouched, since both styles share the abstract deck; only drawing changes.
+// Switches the qubit style (Bra-Ket / Polarization / Analogy). The run
+// itself is untouched, since all styles share the abstract deck; only
+// drawing changes.
 function setDomain(d){
-  if (d !== 'braket' && d !== 'polarization') return; // values come from data-* attributes; accept only known styles
+  if (!DOMAINS.includes(d)) return; // values come from data-* attributes; accept only known styles
   if (game && game.busy) return; // re-rendering mid-animation would tear down the sliding track
   settings.domain = d;
   if ($('game-screen').classList.contains('active')) renderGame({ flip: true });
@@ -863,6 +1127,8 @@ function leadingSlots(d){
 function renderStage(opts){
   opts = opts || {};
   const d = settings.domain, t = TEXT[d];
+  if (d === 'analogy'){ renderAnalogyStage(opts); return; }
+  $('stage').className = 'stage';
   const lead = leadingSlots(d);
   const lit = game.lastCard ? 'lit' : '';
   let current, beam2, beam3, next;
@@ -879,10 +1145,39 @@ function renderStage(opts){
     next = slotHTML('Next object', NEXT_TILE, '');
   }
   $('stage').innerHTML = '<div class="track">' + lead[0] + beamHTML(lit) + lead[1] + beam2 + current + beam3 + next + '</div>';
+  stagePanelFx(opts);
+}
 
+// The stage panel's loss styling (red tint, and a shake when it happens).
+function stagePanelFx(opts){
   const panel = $('stage-panel');
   if (opts.lostFx){ panel.classList.remove('lost-fx'); void panel.offsetWidth; panel.classList.add('lost-fx'); }
   panel.classList.toggle('is-lost', game.phase === 'lost');
+}
+
+// Analogy's stage: [object] -> [the boxes] -> [next object]. `card` is the
+// object to show (null = a faint placeholder, before the first play),
+// `key` the state (ignored when `lost`).
+function anStageHTML(card, cardCls, key, lost, lit){
+  const t = TEXT.analogy, three = anThree();
+  const obj = card ? slotHTML('Object', cardTileHTML(card, 'analogy', cardCls), cardName(card, 'analogy'), 'an-object')
+                   : slotHTML('', GHOST_TILE, '', 'is-ghost an-object');
+  const name = lost ? '' : anStateText(key, three) + ' · ' + anBoxes(three).filter(b => b !== stateByKey(key).an[0]).join(' and ') + (three ? ' are' : ' is') + ' random';
+  const center = '<div class="an-center"><div class="slot-cap">' + (lost ? t.lostLabel : t.currentCap) + '</div>' +
+    anBoxesHTML(lost ? null : key, three, settings.animations ? '' : 'still') +
+    '<div class="slot-name">' + name + '</div></div>';
+  return '<div class="an-row">' + obj + beamHTML(lost ? 'broken' : lit) + center +
+    beamHTML(lost ? 'to-next off an-next' : 'to-next an-next') + (lost ? slotHTML('', GHOST_TILE, '', 'is-ghost an-next') : slotHTML('Next object', NEXT_TILE, '', 'an-next')) + '</div>';
+}
+function renderAnalogyStage(opts){
+  const stage = $('stage');
+  stage.className = 'stage stage-an';
+  const lost = game.phase === 'lost';
+  stage.innerHTML = anStageHTML(game.lastCard, '', lost ? null : stateKeyOf(game.state), lost, game.lastCard ? 'lit' : '');
+  if (opts.pop && !lost) stage.querySelector('.an-tok.is-known').classList.add('an-reveal');
+  if (opts.lostFx && lost) stage.querySelector('.an-lost').classList.add('pop-in');
+  if (opts.flip) stage.querySelector('.an-boxes').classList.add('flip-in');
+  stagePanelFx(opts);
 }
 
 // The "This run" strip: the starting |0> state, then every object survived,
