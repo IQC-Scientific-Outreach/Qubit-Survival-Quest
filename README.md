@@ -38,8 +38,8 @@ style it starts in. A quest started in Analogy uses the exact swaps
 throughout and can switch between Analogy and Bra-Ket, whose "U" basis-change
 cards then stand for the exact swaps. It can't show Polarization, whose twin
 is a real quarter-wave plate. A quest started in Bra-Ket or Polarization uses
-real quarter-wave plates and can't switch to Analogy. The header disables
-the styles a run can't use (`runDomains` in `app.js`).
+real quarter-wave plates and can't switch to Analogy. The header shows only
+the two styles a run can use (`runDomains` in `app.js`).
 
 ## Gameplay (identical to the lab's Game mode)
 
@@ -108,7 +108,9 @@ in quests started in Analogy, including while they are shown in Bra-Ket
 The qubit is drawn as three boxes, one per measurement basis: **X** (red),
 **Y** (green) and **Z** (blue). Each box is labelled with its letter as well
 as its colour. Exactly one box is known and shows 0 or 1; the other two are
-random, drawn as a foggy, blurred reel of 0s and 1s sliding up and down. Each
+random, drawn as a 0 and a 1 on the same spot under drifting cloud, fading
+between the two (sometimes showing the top of one and the bottom of the
+other). Each
 basis's +1 eigenstate reads 0 and its −1 eigenstate reads 1: |0⟩ is Z = 0,
 |−⟩ is X = 1, |+i⟩ is Y = 0, and so on.
 

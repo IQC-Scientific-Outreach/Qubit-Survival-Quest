@@ -511,13 +511,13 @@ function anStateText(key, three, spoken){
 }
 
 // The big stage boxes. Each box is a fixed colored frame plus a "token"
-// holding its contents (a bit, or the sliding foggy reel). Tokens sit
+// holding its contents (a bit, or a 0 and 1 fading under cloud). Tokens sit
 // exactly over their frames; during a play they move (swap) or spin
 // (flip) on their own, so values visibly travel between boxes. `key` null
 // = the qubit was lost (frames greyed, tokens hidden, an X over them).
 function anTokenHTML(b, bit){
   return bit === null
-    ? '<div class="an-tok an-pos-' + b + ' is-fog" data-b="' + b + '"><span class="an-reel"><span>0</span><span>1</span><span>0</span></span></div>'
+    ? '<div class="an-tok an-pos-' + b + ' is-fog" data-b="' + b + '"><span class="an-fog"><span class="d0">0</span><span class="d1">1</span></span></div>'
     : '<div class="an-tok an-pos-' + b + ' is-known" data-b="' + b + '"><span class="an-val">' + bit + '</span></div>';
 }
 function anBoxesHTML(key, three, extra){
@@ -1067,12 +1067,9 @@ function renderGame(opts){
 // Syncs the header controls: style toggle, theme switch, mute button.
 function renderHeader(){
   setPillGroup($('domain-toggle'), settings.domain);
-  // Only the styles this run can switch to are enabled (see setDomain).
+  // Only the styles this run can switch to are shown (see runDomains).
   $('domain-toggle').querySelectorAll('.pill').forEach(p => {
-    const locked = !runDomains(game).includes(p.dataset.value);
-    p.disabled = locked;
-    p.title = locked ? (game.analogy ? 'Not available in a quest started in Analogy. Choose it from the main menu.'
-                                     : 'Analogy is chosen from the main menu, before a quest starts.') : '';
+    p.hidden = !runDomains(game).includes(p.dataset.value);
   });
   const th = $('theme-toggle-header');
   th.classList.toggle('active', settings.theme === 'dark');
