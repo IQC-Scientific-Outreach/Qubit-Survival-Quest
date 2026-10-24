@@ -495,17 +495,18 @@ function anStateSVG(key, three){
 
 // Names. plain=true swaps the arrow for a word, for aria-labels.
 function anCardName(an, three, plain){
-  if (an.declare) return 'Declare ' + an.declare[0] + ' = ' + an.declare[1];
+  if (an.declare) return 'Declare ' + an.declare[0] + '\u00a0=\u00a0' + an.declare[1];
   const vis = anBoxes(three);
   const parts = (an.swap || []).filter(pr => pr.every(b => vis.includes(b))).map(pr => 'Swap ' + pr[0] + (plain ? ' and ' : ' ↔ ') + pr[1]);
   const flips = (an.flip || []).filter(b => vis.includes(b));
   if (flips.length) parts.push((parts.length ? 'flip ' : 'Flip ') + flips.join(plain ? ' and ' : ' & '));
   return parts.length ? parts.join(', ') : 'Nothing changes';
 }
-// "Z = 0", or spoken: "Z is 0; X and Y are random".
+// "Z = 0" (non-breaking spaces, so it never wraps mid-value), or spoken:
+// "Z is 0; X and Y are random".
 function anStateText(key, three, spoken){
   const k = stateByKey(key).an;
-  if (!spoken) return k[0] + ' = ' + k[1];
+  if (!spoken) return k[0] + '\u00a0=\u00a0' + k[1];
   const others = anBoxes(three).filter(b => b !== k[0]);
   return k[0] + ' is ' + k[1] + '; ' + others.join(' and ') + (others.length > 1 ? ' are' : ' is') + ' random';
 }

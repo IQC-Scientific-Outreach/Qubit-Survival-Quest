@@ -937,9 +937,14 @@ h1{
 }
 @media (max-width: 560px){
   .setup-card{ padding: 28px 20px; }
-  .setup-preview{ --tile: 46px; }
-  .setup-preview .slot{ width: calc(var(--tile) + 22px); }
-  .setup-preview .slot-name{ font-size: 11.5px; }
+  /* The preview's four slots and three beams must fit the card's inner
+     width (about 100vw - 86px here: page, card and preview padding), so
+     tiles shrink with the screen below ~375px: 4 * (tile + 16px) plus
+     three 10px beams fits when tile <= 25vw - 45px. */
+  .setup-preview{ --tile: min(46px, calc(25vw - 46px)); padding: 16px 6px 8px; }
+  .setup-preview .slot{ width: calc(var(--tile) + 16px); }
+  .setup-preview .beam{ flex-basis: 10px; min-width: 10px; }
+  .setup-preview .slot-name{ font-size: 11px; }
   /* Phones: 48px tiles, shrinking further on very narrow screens so that
      4 * (tile + 20px) + 3 * 10px fits the ~100vw - 38px of room. */
   .stage-panel{ --tile: min(48px, calc((100vw - 68px) / 4 - 20px)); --slot: calc(var(--tile) + 20px); --beam: 10px; padding: 14px 6px 10px; }

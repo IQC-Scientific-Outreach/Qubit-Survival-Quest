@@ -284,13 +284,16 @@ Checked with headless Chromium during development:
 - **Animation seams:** the slid track lands on exactly the same pixels as
   the resting stage.
 - **Layout sweep, 320–1440 px:** no clipping or page overflow, including
-  the Analogy boxes on portrait phones down to 320×568.
+  the Analogy boxes on portrait phones down to 320×568 and the welcome
+  screen's example sequence (which now shrinks to fit below ~375 px).
 
 Bugs found and fixed in the debugging pass:
 - Holding a number key played a card on every auto-repeat.
 - Leaving for the main menu mid-animation briefly ignored the setup
   screen's style buttons.
 - The stage clipped at about 561–640 px wide and at 320 px.
+- The welcome screen's example sequence overflowed its box on phones
+  narrower than about 412 px.
 
 ## Accessibility
 
