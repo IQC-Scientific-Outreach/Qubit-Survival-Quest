@@ -16,6 +16,11 @@ This is a static site: no build step, no dependencies.
 - **GitHub Pages**: push this folder to a repo, then in
   **Settings → Pages** set the source to the branch/root containing these
   files.
+- **Releasing an update**: bump the `?v=` tag on `style.css`, `audio.js` and
+  `app.js` in `index.html` (all three, same value). GitHub Pages lets browsers
+  cache files for about 10 minutes, and a fresh `index.html` with a stale
+  cached `app.js` leaves new controls dead (this is what made the Split Decks
+  pill unresponsive right after it shipped).
 - **Offline**: everything works without internet except the Barlow Condensed
   heading font, which falls back to a system font. Kets are drawn with CSS and
   SVG rather than KaTeX, so there's no CDN dependency for the math.
@@ -25,7 +30,7 @@ This is a static site: no build step, no dependencies.
 | Setting | Options | Default | Changeable mid-game? |
 |---|---|---|---|
 | Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Yes (header toggle): Bra-Ket ↔ Polarization in quests started in either; Analogy ↔ Bra-Ket in quests started in Analogy |
-| Deck | Mixed Deck / Split Decks | Mixed Deck | No — locked in once the quest starts |
+| Deck | Mixed Deck / Split Decks (the note under it, `DECK_NOTES` in `app.js`, has its own text per deck and style) | Mixed Deck | No — locked in once the quest starts |
 | Numbers | Real-Only / Complex (called Two Box / Three Box in Analogy) | Complex | No — locked in once the quest starts |
 | Sound | On / Off | On | Yes (header mute button) |
 | Animations | On / Off | On (Off if the system asks for reduced motion) | No — set on the welcome screen |
@@ -68,7 +73,7 @@ Mixed Deck is identical to the lab's Game mode; Split Decks is new (below).
 ### Split Decks
 
 - You hold **two projectors and two gates** (polarizers and rotators in
-  Polarization, declarations and gates in Analogy), shown as two docks side
+  Polarization, declarations and swaps in Analogy), shown as two docks side
   by side: four cards in one row, keys 1–4.
 - **Only projectors add to the streak.** Gates still always pass and can
   change the state, but score nothing.
@@ -307,6 +312,10 @@ Checked with headless Chromium during development:
   checks that projector slots only hold projectors, gate slots only gates or
   empties, the empty placeholders match, par matches the deck, and the
   streak counts only projectors.
+- **Harsher stress runs:** the stress test below, repeated with the system
+  asking for reduced motion and with random window resizes (phone ↔
+  desktop) landing mid-animation, plus checks that a loss never counts as a
+  score and every play is announced. No failures, no page errors.
 - **Analogy stress test:** 3,000 instant and 250 animated random actions
   across all three styles and both Numbers settings, including attempts to
   switch to every style mid-game. After each action it checks that
@@ -341,6 +350,34 @@ control names, text alternatives, contrast (computed from rendered colors,
 including opacity and gradients), landmarks/headings, labels, plus a
 keyboard focus walk. Zero findings after the fixes below. Behaviour was
 verified separately with scripted keyboard tests.
+
+Re-audited after Analogy and Split Decks with **axe-core 4.10** (WCAG 2.0 /
+2.1 / 2.2 A and AA plus best practice): 120 screens, covering both themes,
+all three styles, both decks and both Numbers settings. Each screen set was
+setup (all disclosures open), game start, after a gate (an empty Split Decks
+slot), after a projector, and lost. **Zero violations** after these fixes:
+- The "Object equivalents" table's notes column had an empty header; it now
+  has a screen-reader-only "Notes".
+- The in-game header bar wasn't a landmark; it's now `role="banner"`.
+- **Windows High Contrast (forced colours):** the white logo vanished on a
+  white background, switches lost their knob (on/off unreadable), and the
+  selected pill differed only by bold text. Now the logo matching the
+  high-contrast background shows, switches keep a knob and a filled "on"
+  state, the selected pill is filled, and "Begin quest" has a border.
+- **Split Decks focus:** after a gate is played by keyboard its slot empties;
+  focus now moves to the nearest playable card in the same dock (the other
+  gate) instead of jumping back to card 1.
+
+Also checked: every Tab stop shows a focus ring, and hidden header styles
+and empty slots are skipped. Keys 1–4 match each card's `aria-keyshortcuts`.
+Each play makes exactly one announcement, including Split Decks' "Gates
+don't add to your streak" and "You earned a new gate". WCAG 1.4.12 text
+spacing (raised line, letter and word spacing) clips nothing at 1200 and
+390 px wide.
+
+Bug fixed in the same pass: with Animations off, losing the qubit made the
+streak counter do its "scored" pop, because the previous play's flag wasn't
+cleared on a loss.
 
 - **Keyboard:** everything is a native button. Keys 1–3 play cards
   (advertised with `aria-keyshortcuts`, and held keys don't auto-repeat).

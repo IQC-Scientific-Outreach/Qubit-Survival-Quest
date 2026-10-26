@@ -594,17 +594,26 @@ const TEXT = {
     orthogonal: 'That declaration was false',
     rotated: 'Boxes changed!',
     priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost',
-    measDock: 'Declarations', gateDock: 'Gates', gate: 'gate',
+    measDock: 'Declarations', gateDock: 'Swaps', gate: 'swap',
     score: 'Make another true declaration to increase your streak',
     scoreGate: 'Make a true declaration to increase your streak',
-    earn: 'Make a true declaration to earn a gate'
+    earn: 'Make a true declaration to earn a swap'
   }
 };
 const HINT = 'Play another object to increase your streak';
+// Setup-screen note under the Deck pills: one entry per deck and qubit style,
+// so each can be reworded on its own.
 const DECK_NOTES = {
-  mixed: 'Three objects from one shuffled deck. Every object the qubit survives adds to your streak.',
-  split: (t) => 'Two ' + t.measDock.toLowerCase() + ' and two ' + t.gateDock.toLowerCase() + ', in separate docks. Only ' +
-    t.measDock.toLowerCase() + ' add to your streak; each one passed earns back a used ' + t.gate + '.'
+  mixed: {
+    braket: 'Gates and projectors are mixed.',
+    polarization: 'Rotators and polarizers are mixed.',
+    analogy: 'Swaps and declarations are mixed.'
+  },
+  split: {
+    braket: 'Gates and projectors are separate.',
+    polarization: 'Rotators and polarizers are separate.',
+    analogy: 'Swaps and declarations are separate.'
+  }
 };
 const DOMAIN_NOTES = {
   braket: 'Play with Dirac bra-ket notation for gates and states.',
@@ -696,7 +705,7 @@ function renderTwinsTable(){
   const rows = CARD_ORDER.map(id =>
     '<tr>' + cell(id, 'braket') + cell(id, 'polarization') + cell(id, 'analogy') +
     '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + (CARDS[id].an.apply ? '<br>Analogy runs: exact swap*' : '') + '</td></tr>').join('');
-  $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th></th></tr></thead><tbody>' + rows + '</tbody>';
+  $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th><span class="sr-only">Notes</span></th></tr></thead><tbody>' + rows + '</tbody>';
 }
 
 // Syncs every welcome-screen control and note with `settings`. Called after
@@ -706,7 +715,7 @@ function renderSetup(){
   setPillGroup($('setup-domain'), settings.domain);
   setPillGroup($('setup-numbers'), settings.complex ? 'complex' : 'real');
   setPillGroup($('setup-deck'), settings.deck);
-  $('deck-note').textContent = settings.deck === 'split' ? DECK_NOTES.split(TEXT[settings.domain]) : DECK_NOTES.mixed;
+  $('deck-note').textContent = DECK_NOTES[settings.deck][settings.domain];
   [['sound-toggle', settings.sound], ['anim-toggle', settings.animations], ['theme-toggle', settings.theme === 'dark']].forEach(([swId, on]) => {
     const sw = $(swId);
     sw.classList.toggle('active', on);
@@ -808,6 +817,8 @@ function playCard(idx){
 function commitPlay(idx, id, before, result){
   game.lastCard = id;
   game.lastStateBefore = before;
+  game.dealt = [];
+  game.scored = false;   // reset first: a loss must not reuse the last play's flags
   if (!result.survives){
     game.phase = 'lost';
     game.message = { kind: 'lost', reason: result.outcome };
@@ -1325,9 +1336,16 @@ function renderHand(opts){
   }
   hand.querySelectorAll('.hand-card').forEach(b => b.addEventListener('click', () => playCard(Number(b.dataset.idx))));
   if (refocusSlot !== null && !(game && game.busy)){
-    // Back to the same slot, or the first playable card if that slot is now empty.
-    const same = hand.querySelector('.hand-card[data-idx="' + refocusSlot + '"]:not(:disabled)');
-    (same || hand.querySelector('.hand-card:not(:disabled)')).focus();
+    // Back to the same slot. If that slot is now empty (a Split Decks gate),
+    // the nearest playable card, preferring the same dock.
+    const dockOf = (i) => (split && i >= SPLIT.projectors) ? 1 : 0;
+    const from = refocusSlot;
+    const cards = Array.from(hand.querySelectorAll('.hand-card:not(:disabled)'));
+    cards.sort((a, b) => {
+      const ia = Number(a.dataset.idx), ib = Number(b.dataset.idx);
+      return (dockOf(ia) !== dockOf(from)) - (dockOf(ib) !== dockOf(from)) || Math.abs(ia - from) - Math.abs(ib - from);
+    });
+    if (cards.length) cards[0].focus();
     refocusSlot = null;
   }
 }

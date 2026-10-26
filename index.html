@@ -29,7 +29,10 @@
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Qubit Survival Quest</title>
-<link rel="stylesheet" href="style.css">
+<!-- ?v= tags: bump all three together on every release. GitHub Pages lets
+     browsers cache files for ~10 minutes, and a fresh index.html with a
+     stale app.js leaves new controls dead; a changed URL forces a refetch. -->
+<link rel="stylesheet" href="style.css?v=2026-10-24d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -109,7 +112,7 @@
             <button type="button" class="pill active" data-value="mixed">Mixed Deck</button>
             <button type="button" class="pill" data-value="split">Split Decks</button>
           </div>
-          <p class="mode-note mode-note-inline"><span id="deck-note"></span> Fixed for the whole quest.</p>
+          <p class="mode-note mode-note-inline" id="deck-note"></p>
         </div>
 
         <div class="setup-field setup-field-wide">
@@ -187,7 +190,7 @@
   <!-- ===================== GAME SCREEN ===================== -->
   <section id="game-screen" class="screen">
 
-    <header class="game-header">
+    <header class="game-header" role="banner">
       <a class="logo-link" href="https://uwaterloo.ca/institute-for-quantum-computing/outreach" target="_blank" rel="noopener noreferrer">
         <img class="header-logo logo-for-dark" src="UW_IQC_logo_reverse.png" alt="University of Waterloo — Institute for Quantum Computing">
         <img class="header-logo logo-for-light" src="UW_IQC_logo.png" alt="University of Waterloo — Institute for Quantum Computing">
@@ -256,7 +259,7 @@
 <div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
 
 <!-- audio.js first: app.js uses its global SFX. -->
-<script src="audio.js"></script>
-<script src="app.js"></script>
+<script src="audio.js?v=2026-10-24d"></script>
+<script src="app.js?v=2026-10-24d"></script>
 </body>
 </html>
