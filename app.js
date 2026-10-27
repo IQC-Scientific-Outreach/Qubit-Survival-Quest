@@ -568,6 +568,7 @@ const TEXT = {
     unlucky: 'You got unlucky and the qubit was absorbed',
     orthogonal: 'The projector was orthogonal to the state',
     rotated: 'State transformed!',
+    success: 'Successful Transmission!',
     priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost',
     // Split Decks wording: the two docks, and what scores / earns a gate.
     measDock: 'Projectors', gateDock: 'Gates', gate: 'gate',
@@ -581,6 +582,7 @@ const TEXT = {
     unlucky: 'You got unlucky and the photon was absorbed',
     orthogonal: 'The polarizer was orthogonal to the state',
     rotated: 'Polarization state rotated!',
+    success: 'Successful Transmission!',
     priorCap: 'Prior photon state', currentCap: 'Current photon state', lostLabel: 'Absorbed',
     measDock: 'Polarizers', gateDock: 'Rotators', gate: 'rotator',
     score: 'Pass another polarizer to increase your streak',
@@ -593,6 +595,7 @@ const TEXT = {
     unlucky: 'That box was random and came up the other way',
     orthogonal: 'That declaration was false',
     rotated: 'Boxes changed!',
+    success: 'Successful Declaration!',
     priorCap: 'Prior state', currentCap: 'Current state', lostLabel: 'Lost',
     measDock: 'Declarations', gateDock: 'Swaps', gate: 'swap',
     score: 'Make another true declaration to increase your streak',
@@ -1196,7 +1199,7 @@ function renderMessage(opts){
     cls = m.kind; html = '<div class="msg-title">' + (m.kind === 'rotated' ? t.rotated : 'Nothing happens!') + '</div><div class="msg-sub">' + hint + '</div>';
   } else {
     const hint = (isSplit() ? t.score + '.' : HINT) + (m.earned ? ' You earned a new ' + t.gate + '.' : '');
-    cls = 'success'; html = '<div class="msg-title">Successful Transmission!</div><div class="msg-sub">' + (m.kind === 'lucky' ? 'You got lucky that time! ' : '') + hint + '</div>';
+    cls = 'success'; html = '<div class="msg-title">' + t.success + '</div><div class="msg-sub">' + (m.kind === 'lucky' ? 'You got lucky that time! ' : '') + hint + '</div>';
   }
   const box = $('message');
   box.className = 'message ' + cls + (opts.msgAnim ? ' msg-in' : '');

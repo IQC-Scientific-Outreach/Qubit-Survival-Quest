@@ -69,6 +69,8 @@ Mixed Deck is identical to the lab's Game mode; Split Decks is new (below).
 - All message text matches the lab ("Successful Transmission!", "You got lucky
   that time!", "State transformed!" / "Polarization state rotated!",
   "Nothing happens!", "Qubit Lost!" / "Photon Lost!", and both loss reasons).
+  Analogy uses its own wording where the lab's doesn't fit, e.g.
+  "Successful Declaration!" instead of "Successful Transmission!".
 
 ### Split Decks
 
