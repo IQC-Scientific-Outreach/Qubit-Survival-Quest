@@ -163,25 +163,53 @@
       <details class="rules-disclosure">
         <summary>How to play</summary>
         <ol>
-          <li>Pick one of the objects in your hand. Click it, or enter its number (<strong>1</strong>, <strong>2</strong>, <strong>3</strong>, or <strong>4</strong> in Split Decks).</li>
-          <li><strong>Measurements</strong> (projectors, polarizers and declarations) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
-          <li><strong>Gates, rotators and box swaps/flips</strong> always let the qubit through, but can change its state.</li>
-          <li><strong>Mixed Deck:</strong> you hold three objects drawn from one deck, and each object the qubit survives adds one to your streak.</li>
-          <li><strong>Split Decks:</strong> you hold two measurements and two gates, in separate docks. Only measurements add to your streak. A played gate leaves an empty slot, and each measurement the qubit survives earns one gate back, so use your gates to set up sure measurements.</li>
+          <li>Pick one of the objects in your hand by clicking it or entering the number on the top-left of the object.</li>
+          <li><strong>Measurements</strong> (projectors, polarizers, and declarations) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
+          <li><strong>Gates, rotators, and box swaps/flips</strong> always let the qubit through, but can change its state.</li>
           <li>Try to beat the odds and beat par!</li>
         </ol>
+
+	There are two different styles of gameplay to choose between:
+	<ul>
+	  <li><strong>Mixed Deck:</strong> you hold three objects in your hand, which are randomly measurements or gates. Any object played adds to your streak.</li>
+          <li><strong>Split Decks:</strong> you hold two measurements and two gates at a time. Only measurements add to your streak. Gates can be used to transform your state to better your odds of surviving the next measurement, but do not add to your streak. Any gates played leave a blank spot in your hand, and you get one gate back for every measurement you play.</li>
+	</ul>
       </details>
 
       <details class="rules-disclosure">
+        <summary>Superposition and measurement</summary>
+        
+	<p>In quantum mechanics, the outcomes of measurements are generally <strong>probabilistic</strong>, meaning that there is no way to know the result in advance. We can think of each measurement as asking a question. For example, if we ask a qubit in the state |0⟩ whether it is |0⟩ or |1⟩, we will always measure it to be |0⟩. But if we ask the same question of a qubit in the superposition state |+⟩, we will find either |0⟩ or |1⟩ with a 50-50 probability.</p>
+
+	<p>But there are other questions we can ask! If we ask the qubit in the state |+⟩ whether it is |+⟩ or |-⟩, it will always be found as |+⟩. Meanwhile, if we ask a qubit in the state |0⟩ whether it is |+⟩ or |-⟩, it will be found as one or the other randomly. In this <strong>basis</strong>, |+⟩ is definite while |0⟩ is a superposition state.</p>
+
+	<p>In this game, you will attempt to manipulate your qubit using gates so that it is definite in the basis or your measurement. If you are forced to measure in a basis where your qubit is a superposition, you'll be taking a chance on losing your qubit and ending your streak.</p>
+      </details>
+
+      <details class="rules-disclosure">
+        <summary>Qubit styles</summary>
+        
+	<p>There are three qubit styles to choose from for this game.</p>
+
+	<p><strong>Bra-ket</strong> mode mimics standard Dirac notation and the gates commonly referenced in the quantum circuit model. This notation is not specific to any physical implementation and can represent atoms, superconductors, photons, spin, and more. Measurements are represented as projection operators and gates are 2-by-2 unitary matrices.</p>
+
+	<p><strong>Polarization</strong> mode is specific to the polarization of a single photon of light. States are represented by the angle of the polarization vector, and gates are physically implemented by objects that rotate the polarization of light, such as wave-plates and optically active materials. Polarizers take the role of measurements.</p>
+
+	<p><strong>Analogy</strong> mode should be treated with caution. This mode visualizes the qubit state as a system of three boxes each with one bit of information, corresponding to the X, Y, and Z bases. If we know the value of the bit in one box, we must <strong>not</strong> know the value of the bit in the other two. Measurements are instead replaced with declarations, where the player declares the value of a bit in a box. If the box is random, they have a 50-50 probability of succeeding, in which case the box takes on the bit value the player declared. Operations can flip the bit values inside a box or swap values between boxes, all with analogous operations for real qubits. This model perfectly describes one qubit being confined to the X, Y, or Z bases, but cannot describe operations that take the qubit to other states, such as the T gate. Generally, to acheive a computational advantage with quantum technology, it is necessary to access states that aren't acheivable with this analogy.</p>
+
+	<p>Note that there is a subtle difference between how the unitary operation that swaps the Y basis with X or Z functions in analogy mode versus polarization mode, since a quarter-wave plate at zero degrees does not exactly match a Hadamard with the bases changed. Other than that, all measurements and gates have exact equivalents between the different modes.</p>
+      </details>
+
+
+      <details class="rules-disclosure">
         <summary>Object equivalents</summary>
-        <p>The below objects do exactly the same thing to the qubit whether we visualize it as bra-ket or photon polarization, and you can switch between those two at any time without affecting your streak. The Analogy's three boxes match them too, with one exception (*): its basis changes swap two boxes exactly, the way the Hadamard does, while a real quarter-wave plate turns the state only a quarter of the way, so one of the two swapped values comes back flipped. A quest started in the Analogy uses the exact swaps throughout, and can switch between the Analogy and bra-ket (whose basis-change cards then stand for the exact swaps) but not to polarization. A quest started in bra-ket or polarization uses real quarter-wave plates and can't switch to the Analogy. Some objects only appear if Complex Numbers (Three Box in the Analogy) are enabled.</p>
-        <p>In the Analogy, the qubit is three boxes, one for each way of measuring it: <strong>X</strong> (red), <strong>Y</strong> (green) and <strong>Z</strong> (blue). Only one box is ever known; the other two are random. A <strong>declaration</strong> such as “Z = 1” survives if it's true, fails if it's false, and is a 50/50 on a random box. If it survives, that box becomes the known one. On the cards, a double arrow means two boxes exchange values, a ring of arrows means a box flips (0 ↔ 1), and a dashed box is unaffected.</p>
+
         <div class="twins-scroll"><table class="twins-table" id="twins-table"></table></div>
       </details>
 
       <details class="rules-disclosure">
         <summary>Credits</summary>
-        <p>Developed by the Scientific Outreach team at the Institute for Quantum Computing (IQC) of the University of Waterloo in 2026 as a companion to the <a href="https://iqc-scientific-outreach.github.io/iqc-simulators/" target="_blank" rel="noopener noreferrer"><em>Superposition and Measurement Lab</em></a>  and the lesson plans on IQC's <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach/quantum-educators/teacher-resources" target="_blank" rel="noopener noreferrer">teacher resources page</a>. Inspired by an activity from <a href="https://quantumforall.org/" target="_blank" rel="noopener noreferrer">Quantum for All</a>. The development of the user interface relied on artificial intelligence tools.</p>
+        <p>Developed by the Scientific Outreach team at the Institute for Quantum Computing (IQC) of the University of Waterloo in 2026 as a companion to the <a href="https://iqc-scientific-outreach.github.io/iqc-simulators/" target="_blank" rel="noopener noreferrer"><em>Superposition and Measurement Lab</em></a>  and the lesson plans on IQC's <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach/quantum-educators/teacher-resources" target="_blank" rel="noopener noreferrer">teacher resources page</a>. Polarization mode inspired by an activity from <a href="https://quantumforall.org/" target="_blank" rel="noopener noreferrer">Quantum for All</a>. The analogy mode drew inspiration from <a href="https://doi.org/10.1103/PhysRevA.75.032110">Spekken's Toy Model</a> and Terry Rudolph's <a href="https://www.qisforquantum.org/">Q is for Quantum</a>. The development of the user interface relied on artificial intelligence tools.</p>
         <p>Contact <a href="mailto:iqc-outreach@uwaterloo.ca">iqc-outreach@uwaterloo.ca</a> with any questions.</p>
       </details>
     </main>
