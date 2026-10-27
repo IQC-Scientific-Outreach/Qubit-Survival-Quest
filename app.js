@@ -618,7 +618,7 @@ const DECK_NOTES = {
 const DOMAIN_NOTES = {
   braket: 'Play with Dirac bra-ket notation for gates and states.',
   polarization: 'Play with polarization states and rotators.',
-  analogy: 'Play with three boxes: one known bit, and two that are random until you check.'
+  analogy: 'An analogy where the qubit represents three boxes: one known bit, and two that are random until you check.'
 };
 // Follows DOMAIN_NOTES on the setup screen: what can change mid-game.
 const DOMAIN_SWITCH_NOTES = {
@@ -704,7 +704,7 @@ function renderTwinsTable(){
   const cell = (id, d) => '<td><div class="twin-cell">' + cardTileHTML(id, d, '', true) + '<span>' + cardName(id, d, false, true) + '</span></div></td>';
   const rows = CARD_ORDER.map(id =>
     '<tr>' + cell(id, 'braket') + cell(id, 'polarization') + cell(id, 'analogy') +
-    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex /<br>Three Box only' : '') + (CARDS[id].an.apply ? '<br>Analogy runs: exact swap*' : '') + '</td></tr>').join('');
+    '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex only' : '')  + '</td></tr>').join('');
   $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th><span class="sr-only">Notes</span></th></tr></thead><tbody>' + rows + '</tbody>';
 }
 
