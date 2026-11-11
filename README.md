@@ -29,9 +29,9 @@ This is a static site: no build step, no dependencies.
 
 | Setting | Options | Default | Changeable mid-game? |
 |---|---|---|---|
-| Qubit style | Bra-Ket / Polarization / Analogy | Bra-Ket | Yes (header toggle): Bra-Ket ↔ Polarization in quests started in either; Analogy ↔ Bra-Ket in quests started in Analogy |
+| Qubit style | Bra-Ket / Polarization / Analogy (Analogy hidden by default, see below) | Polarization | Yes (header toggle): Bra-Ket ↔ Polarization in quests started in either; Analogy ↔ Bra-Ket in quests started in Analogy |
 | Deck | Mixed Deck / Split Decks (the note under it, `DECK_NOTES` in `app.js`, has its own text per deck and style) | Mixed Deck | No — locked in once the quest starts |
-| Numbers | Real-Only / Complex (called Two Box / Three Box in Analogy) | Complex | No — locked in once the quest starts |
+| Numbers | Real-Only / Complex (called Two Box / Three Box in Analogy) | Real-Only | No — locked in once the quest starts |
 | Sound | On / Off | On | Yes (header mute button) |
 | Animations | On / Off | On (Off if the system asks for reduced motion) | No — set on the welcome screen |
 | Theme | Light / Dark | Dark | Yes (header ☀/☾ switch) |
@@ -47,6 +47,29 @@ cards then stand for the exact swaps. It can't show Polarization, whose twin
 is a real quarter-wave plate. A quest started in Bra-Ket or Polarization uses
 real quarter-wave plates and can't switch to Analogy. The header shows only
 the two styles a run can use (`runDomains` in `app.js`).
+
+### Showing or hiding Analogy mode
+
+Analogy is **hidden** by default. The switch is the `data-show-analogy`
+attribute on the `<html>` tag near the top of `index.html`:
+
+```html
+<html lang="en" data-theme="dark" data-show-analogy="false">
+```
+
+Set it to `"true"` to offer Analogy again. While it is `"false"`:
+- Every element marked `data-analogy-only` is hidden (`display: none`, so
+  also unreachable by keyboard and screen readers): both Analogy buttons,
+  the Analogy rules paragraph, the Analogy note in "Qubit styles", and the
+  Analogy sentence in the credits.
+- Every element marked `data-analogy-off` shows instead. These are the
+  two-style wordings, e.g. "There are two qubit styles" instead of "three".
+- The "Object equivalents" table has no Analogy column, and `setDomain()`
+  refuses to switch to Analogy (`analogyShown()` in `app.js`).
+
+The Analogy code stays in `app.js` either way. To add text that depends on
+the switch, wrap it in an element with `data-analogy-only` or
+`data-analogy-off`.
 
 ## Gameplay
 

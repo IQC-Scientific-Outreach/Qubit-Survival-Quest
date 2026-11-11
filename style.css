@@ -1141,6 +1141,12 @@ h1{
   :root:root .logo-link .logo-for-light{ display: none; }
 }
 
+/* Analogy mode switch (data-show-analogy on <html>, top of index.html).
+   display:none also removes the element from the keyboard order and from
+   screen readers, so hidden Analogy pieces are fully inaccessible. */
+:root[data-show-analogy="false"] [data-analogy-only],
+:root:not([data-show-analogy="false"]) [data-analogy-off]{ display: none !important; }
+
 /* Visually hidden but read by screen readers (the #sr-status line). */
 .sr-only{ position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 /* Headings that receive focus programmatically (screen changes) don't
