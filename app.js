@@ -647,7 +647,12 @@ const NUMBERS_LABELS = {
 //   flash   — on a loss, how long the object flashes red before the slide
 const TIMING = { depart: 90, travel: 180, shift: 240, flash: 320, milestoneDelay: 380 };
 
-const settings = { domain: 'braket', deck: 'mixed', complex: true, sound: true, animations: true, theme: 'dark' };
+const settings = { domain: 'polarization', deck: 'mixed', complex: false, sound: true, animations: true, theme: 'dark' };
+// Whether the Analogy qubit style is offered: the data-show-analogy switch on
+// <html> at the top of index.html. When off, CSS hides every Analogy-only
+// element, setDomain refuses 'analogy', and the equivalents table drops its
+// Analogy column. The Analogy code itself stays.
+function analogyShown(){ return document.documentElement.dataset.showAnalogy !== 'false'; }
 const bestStreak = {}; // per session, per deck + numbers setting (par differs), e.g. bestStreak['split-real']
 let game = null;
 let refocusSlot = null; // hand slot to re-focus after the hand re-renders (keyboard users)
@@ -704,11 +709,13 @@ function renderPreview(){
 // it always matches the actual deck: one row per object, all three
 // renderings (Analogy always with all three boxes).
 function renderTwinsTable(){
+  const styles = analogyShown() ? ['braket', 'polarization', 'analogy'] : ['braket', 'polarization'];
+  const heads = { braket: 'Bra-Ket', polarization: 'Polarization', analogy: 'Analogy' };
   const cell = (id, d) => '<td><div class="twin-cell">' + cardTileHTML(id, d, '', true) + '<span>' + cardName(id, d, false, true) + '</span></div></td>';
   const rows = CARD_ORDER.map(id =>
-    '<tr>' + cell(id, 'braket') + cell(id, 'polarization') + cell(id, 'analogy') +
+    '<tr>' + styles.map(d => cell(id, d)).join('') +
     '<td class="twin-note">' + (CARDS[id].complexOnly ? 'Complex only' : '')  + '</td></tr>').join('');
-  $('twins-table').innerHTML = '<thead><tr><th>Bra-Ket</th><th>Polarization</th><th>Analogy</th><th><span class="sr-only">Notes</span></th></tr></thead><tbody>' + rows + '</tbody>';
+  $('twins-table').innerHTML = '<thead><tr>' + styles.map(d => '<th>' + heads[d] + '</th>').join('') + '<th><span class="sr-only">Notes</span></th></tr></thead><tbody>' + rows + '</tbody>';
 }
 
 // Syncs every welcome-screen control and note with `settings`. Called after
@@ -1124,6 +1131,7 @@ function runDomains(g){
 // only to a style the run can be shown in (runDomains).
 function setDomain(d){
   if (!DOMAINS.includes(d)) return; // values come from data-* attributes; accept only known styles
+  if (d === 'analogy' && !analogyShown()) return; // Analogy hidden: unreachable
   if (game && game.busy) return; // re-rendering mid-animation would tear down the sliding track
   if (game && $('game-screen').classList.contains('active') && !runDomains(game).includes(d)) return;
   settings.domain = d;

@@ -10,7 +10,12 @@
   game-screen content is empty here and drawn by app.js.
 -->
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!-- ANALOGY MODE SWITCH: data-show-analogy="true" shows the Analogy qubit
+     style; "false" hides it everywhere (style buttons, rules text, credits,
+     equivalents table) and the game refuses to switch to it. The code stays
+     in app.js either way. Elements marked data-analogy-only show only when
+     it is on; elements marked data-analogy-off only when it is off. -->
+<html lang="en" data-theme="dark" data-show-analogy="false">
 <head>
 <meta charset="UTF-8">
 <!-- Security: Content-Security-Policy. GitHub Pages can't set HTTP headers,
@@ -32,7 +37,7 @@
 <!-- ?v= tags: bump all three together on every release. GitHub Pages lets
      browsers cache files for ~10 minutes, and a fresh index.html with a
      stale app.js leaves new controls dead; a changed URL forces a refetch. -->
-<link rel="stylesheet" href="style.css?v=2026-10-27a">
+<link rel="stylesheet" href="style.css?v=2026-11-11a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -99,9 +104,9 @@
         <div class="setup-field setup-field-wide">
           <span class="field-label" id="setup-domain-label">Qubit style</span>
           <div class="pill-group" id="setup-domain" role="group" aria-labelledby="setup-domain-label">
-            <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
-            <button type="button" class="pill" data-value="polarization">Polarization</button>
-            <button type="button" class="pill" data-value="analogy">Analogy</button>
+            <button type="button" class="pill" data-value="braket">Bra-Ket</button>
+            <button type="button" class="pill active" data-value="polarization">Polarization</button>
+            <button type="button" class="pill" data-value="analogy" data-analogy-only>Analogy</button>
           </div>
           <p class="mode-note mode-note-inline"><span id="domain-note"></span></p>
         </div>
@@ -118,8 +123,8 @@
         <div class="setup-field setup-field-wide">
           <span class="field-label" id="setup-numbers-label">Numbers</span>
           <div class="pill-group" id="setup-numbers" role="group" aria-labelledby="setup-numbers-label">
-            <button type="button" class="pill" data-value="real">Real-Only</button>
-            <button type="button" class="pill active" data-value="complex">Complex</button>
+            <button type="button" class="pill active" data-value="real">Real-Only</button>
+            <button type="button" class="pill" data-value="complex">Complex</button>
           </div>
           <p class="mode-note mode-note-inline" id="numbers-note"></p>
         </div>
@@ -164,8 +169,8 @@
         <summary>How to play</summary>
         <ol>
           <li>Pick one of the objects in your hand by clicking it or entering the number on the top-left of the object.</li>
-          <li><strong>Measurements</strong> (projectors, polarizers, and declarations) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
-          <li><strong>Gates, rotators, and box swaps/flips</strong> always let the qubit through, but can change its state.</li>
+          <li><strong>Measurements</strong> (<span data-analogy-only>projectors, polarizers, and declarations</span><span data-analogy-off>projectors and polarizers</span>) always let the qubit through if it is in the same state and block it if it is in an orthogonal state. If the state is a superposition in the basis of the projectors, it will make it through with some probability and <strong>collapse</strong> to the basis of the measurement.</li>
+          <li><strong><span data-analogy-only>Gates, rotators, and box swaps/flips</span><span data-analogy-off>Gates and rotators</span></strong> always let the qubit through, but can change its state.</li>
           <li>Try to beat the odds and beat par!</li>
         </ol>
 
@@ -189,15 +194,15 @@
       <details class="rules-disclosure">
         <summary>Qubit styles</summary>
         
-	<p>There are three qubit styles to choose from for this game.</p>
+	<p>There are <span data-analogy-only>three</span><span data-analogy-off>two</span> qubit styles to choose from for this game.</p>
 
 	<p><strong>Bra-ket</strong> mode mimics standard Dirac notation and the gates commonly referenced in the quantum circuit model. This notation is not specific to any physical implementation and can represent atoms, superconductors, photons, spin, and more. Measurements are represented as projection operators and gates are 2-by-2 unitary matrices.</p>
 
 	<p><strong>Polarization</strong> mode is specific to the polarization of a single photon of light. States are represented by the angle of the polarization vector, and gates are physically implemented by objects that rotate the polarization of light, such as wave-plates and optically active materials. Polarizers take the role of measurements.</p>
 
-	<p><strong>Analogy</strong> mode should be treated with caution. This mode visualizes the qubit state as a system of three boxes each with one bit of information, corresponding to the X, Y, and Z bases. If we know the value of the bit in one box, we must <strong>not</strong> know the value of the bit in the other two. Measurements are instead replaced with declarations, where the player declares the value of a bit in a box. If the box is random, they have a 50-50 probability of succeeding, in which case the box takes on the bit value the player declared. Operations can flip the bit values inside a box or swap values between boxes, all with analogous operations for real qubits. This model perfectly describes one qubit being confined to the X, Y, or Z bases, but cannot describe operations that take the qubit to other states, such as the T gate. Generally, to acheive a computational advantage with quantum technology, it is necessary to access states that aren't acheivable with this analogy.</p>
+	<p data-analogy-only><strong>Analogy</strong> mode should be treated with caution. This mode visualizes the qubit state as a system of three boxes each with one bit of information, corresponding to the X, Y, and Z bases. If we know the value of the bit in one box, we must <strong>not</strong> know the value of the bit in the other two. Measurements are instead replaced with declarations, where the player declares the value of a bit in a box. If the box is random, they have a 50-50 probability of succeeding, in which case the box takes on the bit value the player declared. Operations can flip the bit values inside a box or swap values between boxes, all with analogous operations for real qubits. This model perfectly describes one qubit being confined to the X, Y, or Z bases, but cannot describe operations that take the qubit to other states, such as the T gate. Generally, to acheive a computational advantage with quantum technology, it is necessary to access states that aren't acheivable with this analogy.</p>
 
-	<p>Note that there is a subtle difference between how the unitary operation that swaps the Y basis with X or Z functions in analogy mode versus polarization mode, since a quarter-wave plate at zero degrees does not exactly match a Hadamard with the bases changed. Other than that, all measurements and gates have exact equivalents between the different modes.</p>
+	<p data-analogy-only>Note that there is a subtle difference between how the unitary operation that swaps the Y basis with X or Z functions in analogy mode versus polarization mode, since a quarter-wave plate at zero degrees does not exactly match a Hadamard with the bases changed. Other than that, all measurements and gates have exact equivalents between the different modes.</p>
       </details>
 
 
@@ -209,7 +214,7 @@
 
       <details class="rules-disclosure">
         <summary>Credits</summary>
-        <p>Developed by the Scientific Outreach team at the Institute for Quantum Computing (IQC) of the University of Waterloo in 2026 as a companion to the <a href="https://iqc-scientific-outreach.github.io/iqc-simulators/" target="_blank" rel="noopener noreferrer"><em>Superposition and Measurement Lab</em></a>  and the lesson plans on IQC's <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach/quantum-educators/teacher-resources" target="_blank" rel="noopener noreferrer">teacher resources page</a>. Polarization mode inspired by an activity from <a href="https://quantumforall.org/" target="_blank" rel="noopener noreferrer">Quantum for All</a>. The analogy mode drew inspiration from <a href="https://doi.org/10.1103/PhysRevA.75.032110">Spekken's Toy Model</a> and Terry Rudolph's <a href="https://www.qisforquantum.org/">Q is for Quantum</a>. The development of the user interface relied on artificial intelligence tools.</p>
+        <p>Developed by the Scientific Outreach team at the Institute for Quantum Computing (IQC) of the University of Waterloo in 2026 as a companion to the <a href="https://iqc-scientific-outreach.github.io/iqc-simulators/" target="_blank" rel="noopener noreferrer"><em>Superposition and Measurement Lab</em></a>  and the lesson plans on IQC's <a href="https://uwaterloo.ca/institute-for-quantum-computing/outreach/quantum-educators/teacher-resources" target="_blank" rel="noopener noreferrer">teacher resources page</a>. Polarization mode inspired by an activity from <a href="https://quantumforall.org/" target="_blank" rel="noopener noreferrer">Quantum for All</a>.<span data-analogy-only> The analogy mode drew inspiration from <a href="https://doi.org/10.1103/PhysRevA.75.032110">Spekken's Toy Model</a> and Terry Rudolph's <a href="https://www.qisforquantum.org/">Q is for Quantum</a>.</span> The development of the user interface relied on artificial intelligence tools.</p>
         <p>Contact <a href="mailto:iqc-outreach@uwaterloo.ca">iqc-outreach@uwaterloo.ca</a> with any questions.</p>
       </details>
     </main>
@@ -226,9 +231,9 @@
       <h1 class="game-title" id="game-title" tabindex="-1">Qubit Survival Quest</h1>
       <div class="header-controls">
         <div class="pill-group pill-group-compact" id="domain-toggle" role="group" aria-label="Qubit style">
-          <button type="button" class="pill active" data-value="braket">Bra-Ket</button>
-          <button type="button" class="pill" data-value="polarization">Polarization</button>
-            <button type="button" class="pill" data-value="analogy">Analogy</button>
+          <button type="button" class="pill" data-value="braket">Bra-Ket</button>
+          <button type="button" class="pill active" data-value="polarization">Polarization</button>
+            <button type="button" class="pill" data-value="analogy" data-analogy-only>Analogy</button>
         </div>
         <div class="toggle-row theme-row" title="Light / dark theme">
           <span class="theme-icon" aria-hidden="true">☀</span>
@@ -287,7 +292,7 @@
 <div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
 
 <!-- audio.js first: app.js uses its global SFX. -->
-<script src="audio.js?v=2026-10-27a"></script>
-<script src="app.js?v=2026-10-27a"></script>
+<script src="audio.js?v=2026-11-11a"></script>
+<script src="app.js?v=2026-11-11a"></script>
 </body>
 </html>
