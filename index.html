@@ -37,7 +37,7 @@
 <!-- ?v= tags: bump all three together on every release. GitHub Pages lets
      browsers cache files for ~10 minutes, and a fresh index.html with a
      stale app.js leaves new controls dead; a changed URL forces a refetch. -->
-<link rel="stylesheet" href="style.css?v=2026-11-11a">
+<link rel="stylesheet" href="style.css?v=2026-11-11b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -240,6 +240,13 @@
           <span class="theme-icon" aria-hidden="true">☾</span>
         </div>
         <button id="mute-btn" class="icon-btn" aria-label="Mute sound" title="Mute sound">🔊</button>
+        <!-- Full screen toggle (label and icon swapped by app.js). Hidden on
+             browsers without the Fullscreen API, e.g. iPhone Safari. -->
+        <button type="button" id="fullscreen-btn" class="ghost-btn fs-btn" aria-label="Full screen" title="Full screen">
+          <svg class="fs-icon fs-enter" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 6V1.5H6M10 1.5h4.5V6M14.5 10v4.5H10M6 14.5H1.5V10"/></svg>
+          <svg class="fs-icon fs-exit" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 1.5V6H1.5M14.5 6H10V1.5M10 14.5V10h4.5M1.5 10H6v4.5"/></svg>
+          <span class="fs-label">Full screen</span>
+        </button>
         <button id="menu-btn" class="ghost-btn">Main menu</button>
       </div>
     </header>
@@ -291,7 +298,7 @@
 <div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
 
 <!-- audio.js first: app.js uses its global SFX. -->
-<script src="audio.js?v=2026-11-11a"></script>
-<script src="app.js?v=2026-11-11a"></script>
+<script src="audio.js?v=2026-11-11b"></script>
+<script src="app.js?v=2026-11-11b"></script>
 </body>
 </html>

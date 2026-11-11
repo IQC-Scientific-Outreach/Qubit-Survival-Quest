@@ -1361,6 +1361,37 @@ function renderHand(opts){
   }
 }
 
+/* ---------- Full screen ----------
+   The header's Full screen button puts the whole page in the browser's full
+   screen mode (Escape or the button again leaves it). While full screen,
+   <html> carries .is-fullscreen, and style.css lays the game screen out as
+   one screen-high column whose board and cards scale with the screen's
+   height, so the streak, board and hand are all visible at once. The
+   webkit-prefixed calls cover older Safari. */
+function fullscreenElement(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
+function fullscreenSupported(){ return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled); }
+function toggleFullscreen(){
+  const root = document.documentElement;
+  const req = fullscreenElement()
+    ? (document.exitFullscreen || document.webkitExitFullscreen)
+    : (root.requestFullscreen || root.webkitRequestFullscreen);
+  if (!req) return;
+  const r = req.call(fullscreenElement() ? document : root);
+  if (r && r.catch) r.catch(() => {}); // refused (e.g. not from a click): stay as we are
+}
+// Keeps the layout class and the button's label and icon in step with the
+// browser, however full screen was entered or left (button, Escape, F11 exit).
+function syncFullscreen(){
+  const on = !!fullscreenElement();
+  document.documentElement.classList.toggle('is-fullscreen', on);
+  const btn = $('fullscreen-btn');
+  const label = on ? 'Exit full screen' : 'Full screen';
+  btn.classList.toggle('is-on', on);
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
+  btn.querySelector('.fs-label').textContent = label;
+}
+
 /* ---------- Wiring ---------- */
 
 // Light/dark theme: purely visual (CSS variables keyed off <html
@@ -1404,6 +1435,14 @@ function initUI(){
 
   wirePillGroup($('domain-toggle'), v => setDomain(v));
   $('mute-btn').addEventListener('click', () => { setSound(!settings.sound); renderHeader(); renderSetup(); });
+  if (fullscreenSupported()){
+    $('fullscreen-btn').addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    document.addEventListener('webkitfullscreenchange', syncFullscreen);
+    syncFullscreen();
+  } else {
+    $('fullscreen-btn').hidden = true;
+  }
   // Leaving for the main menu ends the run. Dropping the game object also
   // cancels any play animation still in flight (its steps check alive(),
   // i.e. that `game` is still the object they started with) and releases

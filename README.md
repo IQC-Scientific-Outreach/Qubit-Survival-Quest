@@ -35,6 +35,7 @@ This is a static site: no build step, no dependencies.
 | Sound | On / Off | On | Yes (header mute button) |
 | Animations | On / Off | On (Off if the system asks for reduced motion) | No — set on the welcome screen |
 | Theme | Light / Dark | Dark | Yes (header ☀/☾ switch) |
+| Full screen | On / Off | Off | Yes (header button, left of Main menu; Escape also leaves) |
 
 Deck and Numbers are locked because they change the rules or the deck (and
 therefore par); neither has an in-game control. Switching
@@ -47,6 +48,29 @@ cards then stand for the exact swaps. It can't show Polarization, whose twin
 is a real quarter-wave plate. A quest started in Bra-Ket or Polarization uses
 real quarter-wave plates and can't switch to Analogy. The header shows only
 the two styles a run can use (`runDomains` in `app.js`).
+
+### Full screen
+
+The **Full screen** button in the game header (left of Main menu; icon only
+on phones) puts the page in the browser's full screen mode, and the button
+or Escape leaves it. It's hidden on browsers without the Fullscreen API
+(e.g. iPhone Safari).
+
+While full screen, `<html>` carries `.is-fullscreen`. On screens at least
+601 × 560 (desktops, laptops, tablets), the game screen then becomes one
+screen-high column: header, score and message side by side, the board
+(taking the remaining height), then the hand. The board, Analogy triangle
+and card sizes, the streak number and the spacing scale with the screen
+height as well as its width, so the streak counter, board and hand are all
+visible at once. Screens 660px tall or less also drop the hand's
+instruction line.
+
+Checked at 1024×768, 1280×620, 1280×720, 1366×768, 1440×900, 1536×864,
+1920×1080, 2560×1440, 768×1024, 1024×1366, 800×600 and 700×800, in all three
+styles and both decks: everything fits, nothing clips, and nothing scrolls
+sideways. Phones keep their usual layouts in full screen: portrait already
+fits one screen, and landscape is too short to fit everything, so it
+scrolls as normal.
 
 ### Showing or hiding Analogy mode
 
